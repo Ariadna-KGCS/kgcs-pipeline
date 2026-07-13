@@ -1,0 +1,211 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MITRE ENGAGE Schema v1.0",
+  "description": "JSON Schema definitions for MITRE ENGAGE standard. ENGAGE provides a framework for defender adversary engagement operations including deception, denial, and detection activities aligned with strategic and engagement goals.",
+  "definitions": {
+    "activity": {
+      "$id": "#/definitions/activity",
+      "title": "ENGAGE Activity",
+      "description": "Engagement activity from MITRE ENGAGE representing a specific collection, detection, prevention, direction, disruption, reassurance, motivation, planning, or analysis action that defenders can take.",
+      "type": "object",
+      "required": ["id", "name", "description", "long_description", "type"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^EAC[0-9]{4}$",
+          "description": "Unique ENGAGE activity identifier in format EACxxxx (e.g., EAC0001)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable name of the engagement activity"
+        },
+        "description": {
+          "type": "string",
+          "description": "Short description of the activity (1-2 sentences)"
+        },
+        "long_description": {
+          "type": "string",
+          "description": "Detailed description of the activity with examples and use cases"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["Engagement", "Strategic"],
+          "description": "Activity type classification (Engagement or Strategic)"
+        },
+        "goals": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^(EGO|SGO)[0-9]{4}$"
+          },
+          "minItems": 0,
+          "description": "Goal IDs that this activity supports (e.g., EGO0001, SGO0001)"
+        },
+        "vulnerabilities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "eav"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^EAV[0-9]{4}$",
+                "description": "Engagement Adversarial Vulnerability ID (e.g., EAV0001)"
+              },
+              "eav": {
+                "type": "string",
+                "description": "Description of the adversary vulnerability this activity can exploit"
+              }
+            }
+          },
+          "description": "Engagement Adversarial Vulnerabilities (EAVs) that this activity exploits"
+        },
+        "attack_techniques": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "name"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^T[0-9]{4}(\\.[0-9]{3})?$",
+                "description": "ATT&CK technique ID (e.g., T1007, T1021.001)"
+              },
+              "name": {
+                "type": "string",
+                "description": "ATT&CK technique name"
+              },
+              "attack_tactics": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "ATT&CK tactic(s) associated with this technique"
+              }
+            }
+          },
+          "description": "ATT&CK techniques that this activity can engage with or detect"
+        }
+      }
+    },
+    "approach": {
+      "$id": "#/definitions/approach",
+      "title": "ENGAGE Approach",
+      "description": "Engagement approach from MITRE ENGAGE representing a strategic collection, detection, or tactical activity type that aligns with specific goals.",
+      "type": "object",
+      "required": ["id", "name", "description", "long_description"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^(EAP|SAP)[0-9]{4}$",
+          "description": "Unique ENGAGE approach identifier in format EAPxxxx or SAPxxxx (e.g., EAP0001, SAP0001)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable name of the approach"
+        },
+        "description": {
+          "type": "string",
+          "description": "Short description of the approach (1-2 sentences)"
+        },
+        "long_description": {
+          "type": "string",
+          "description": "Detailed description of the approach with strategic context"
+        }
+      }
+    },
+    "goal": {
+      "$id": "#/definitions/goal",
+      "title": "ENGAGE Goal",
+      "description": "Strategic or engagement goal from MITRE ENGAGE representing high-level objectives for adversary engagement operations.",
+      "type": "object",
+      "required": ["id", "name", "description", "long_description"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^(EGO|SGO)[0-9]{4}$",
+          "description": "Unique ENGAGE goal identifier in format EGOxxxx (Engagement Goal) or SGOxxxx (Strategic Goal)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable name of the goal"
+        },
+        "description": {
+          "type": "string",
+          "description": "Short description of the goal"
+        },
+        "long_description": {
+          "type": "string",
+          "description": "Detailed description of the goal with strategic context and sub-goals"
+        },
+        "goal_type": {
+          "type": "string",
+          "enum": ["Engagement", "Strategic"],
+          "description": "Type of goal (Engagement Goal for tactical operations, Strategic Goal for long-term planning)"
+        }
+      }
+    },
+    "reference": {
+      "$id": "#/definitions/reference",
+      "title": "ENGAGE Reference",
+      "description": "External reference (academic paper, documentation, etc.) linked to ENGAGE activities.",
+      "type": "object",
+      "required": ["id", "title", "url", "activity_id"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^REF[0-9]{4}$",
+          "description": "Unique reference identifier in format REFxxxx (e.g., REF0001)"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the reference (paper, article, documentation)"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to the reference material (DOI, arxiv, or documentation link)"
+        },
+        "activity_id": {
+          "type": "string",
+          "pattern": "^EAC[0-9]{4}$",
+          "description": "ENGAGE activity ID that this reference supports or documents"
+        }
+      }
+    },
+    "mapping": {
+      "$id": "#/definitions/mapping",
+      "title": "ENGAGE Mapping",
+      "description": "Mapping relationship between ENGAGE components and external frameworks (ATT&CK, etc.).",
+      "type": "object",
+      "properties": {
+        "source_id": {
+          "type": "string",
+          "description": "Source entity ID (e.g., goal_id, approach_id, activity_id)"
+        },
+        "target_id": {
+          "type": "string",
+          "description": "Target entity ID (e.g., approach_id, attack_id, eav_id)"
+        },
+        "relationship": {
+          "type": "string",
+          "description": "Type of relationship between entities"
+        }
+      }
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/definitions/activity"
+    },
+    {
+      "$ref": "#/definitions/approach"
+    },
+    {
+      "$ref": "#/definitions/goal"
+    },
+    {
+      "$ref": "#/definitions/reference"
+    }
+  ]
+}

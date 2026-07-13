@@ -1,0 +1,71 @@
+# KGCS Data Downloader Configuration
+#
+# Configuration for cybersecurity data downloads from NIST and MITRE
+# Settings can be overridden via command-line arguments
+
+# HTTP request timeout in seconds (default: 300s = 5 minutes)
+timeout: 300
+
+# Number of retry attempts for failed downloads (default: 5)
+retries: 5
+
+# Base output directory for downloaded data (default: data/raw)
+output_dir: data/raw
+
+# List of standards to enable
+# Available: cve, cwe, cpe, cvss, capec, attck, d3fend, car, engage, shield
+enabled_standards:
+  - cve
+  - cwe
+  - cpe
+  - cvss
+  - capec
+  - attck
+  - d3fend
+  - car
+  - engage
+  - shield
+
+# Validate downloaded data after download (default: true)
+validate: true
+
+# Generate download report (default: false)
+report: false
+
+# Per-standard configuration overrides
+standards:
+  cve:
+    timeout: 300
+    enabled: true
+  cwe:
+    timeout: 300
+    enabled: true
+  cpe:
+    timeout: 300
+    enabled: true
+  cvss:
+    timeout: 300
+    enabled: true
+  capec:
+    timeout: 300
+    enabled: true
+  attck:
+    timeout: 300
+    enabled: true
+  d3fend:
+    timeout: 300
+    enabled: true
+  car:
+    timeout: 300
+    enabled: true
+  engage:
+    timeout: 300
+    enabled: true
+  shield:
+    timeout: 300
+    enabled: true
+
+# Logging configuration
+logging:
+  level: INFO  # DEBUG, INFO, WARNING, ERROR
+  format: '%(asctime)s [%(levelname)s] %(name)s: %(message)s'

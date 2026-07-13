@@ -1,0 +1,289 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MITRE CAR Schema v1.0",
+  "description": "JSON Schema definitions for MITRE Cyber Analytics Repository (CAR) standard. CAR provides cyber analytics and data models for detection of ATT&CK techniques.",
+  "definitions": {
+    "analytic": {
+      "$id": "#/definitions/analytic",
+      "title": "CAR Analytic",
+      "description": "Detection analytic from MITRE CAR (Cyber Analytics Repository) indexed by CAR-YYYY-MM-NNN identifier.",
+      "type": "object",
+      "required": ["id", "title", "submission_date", "information_domain", "description", "coverage"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^CAR-[0-9]{4}-[0-9]{2}-[0-9]{3}$",
+          "description": "Unique CAR identifier in format CAR-YYYY-MM-NNN (e.g., CAR-2013-01-002)"
+        },
+        "title": {
+          "type": "string",
+          "description": "Human-readable title of the analytic"
+        },
+        "submission_date": {
+          "type": "string",
+          "pattern": "^[0-9]{4}/[0-9]{2}/[0-9]{2}$",
+          "description": "Submission date in YYYY/MM/DD format"
+        },
+        "information_domain": {
+          "type": "string",
+          "enum": ["Network", "Host", "File", "Object", "Launched Script", "Process", "User", "Cloud"],
+          "description": "Primary information domain covered by this analytic"
+        },
+        "platforms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Target platforms (Windows, Linux, macOS, etc.; or 'N/A' if not applicable)"
+        },
+        "subtypes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Analytic subtypes (PCAP, Process, Registry, etc.)"
+        },
+        "analytic_types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Analytic type classification (Situational Awareness, Detection, etc.)"
+        },
+        "contributors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Contributors who developed or maintained this analytic"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of the analytic, its purpose, and methodology"
+        },
+        "coverage": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["technique", "tactics"],
+            "properties": {
+              "technique": {
+                "type": "string",
+                "pattern": "^T[0-9]{4}$",
+                "description": "ATT&CK technique ID (e.g., T1039, T1021)"
+              },
+              "tactics": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^TA[0-9]{4}$"
+                },
+                "minItems": 1,
+                "description": "ATT&CK tactics associated with this technique (e.g., TA0009, TA0008)"
+              },
+              "subtechniques": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^T[0-9]{4}\\.[0-9]{3}$"
+                },
+                "description": "Subtechnique IDs if applicable (e.g., T1021.002)"
+              },
+              "coverage": {
+                "type": "string",
+                "enum": ["Low", "Moderate", "High"],
+                "description": "Level of coverage for this technique"
+              }
+            }
+          },
+          "minItems": 1,
+          "description": "ATT&CK technique coverage array - minimum 1 required"
+        },
+        "implementations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["description", "code", "type"],
+            "properties": {
+              "description": {
+                "type": "string",
+                "description": "Human description of the implementation"
+              },
+              "code": {
+                "type": "string",
+                "description": "Code or pseudocode for the analytic implementation"
+              },
+              "type": {
+                "type": "string",
+                "enum": ["pseudocode", "sql", "splunk", "eql", "other"],
+                "description": "Implementation language/format type"
+              }
+            }
+          },
+          "description": "Optional implementations of the detection analytic"
+        },
+        "data_model_references": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "References to CAR data model fields used by this analytic (e.g., flow/message/dest_port)"
+        },
+        "d3fend_mappings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["iri", "id", "label"],
+            "properties": {
+              "iri": {
+                "type": "string",
+                "description": "IRI reference to D3FEND defensive technique"
+              },
+              "id": {
+                "type": "string",
+                "description": "D3FEND identifier (e.g., D3-IPCTA)"
+              },
+              "label": {
+                "type": "string",
+                "description": "Display label for the D3FEND mapping"
+              }
+            }
+          },
+          "description": "Optional mappings to D3FEND defensive techniques"
+        }
+      }
+    },
+    "datamodel": {
+      "$id": "#/definitions/datamodel",
+      "title": "CAR Data Model Entity",
+      "description": "Data model entity definition from MITRE CAR representing a cyber observable (Process, File, Flow, etc.)",
+      "type": "object",
+      "required": ["name", "description", "actions", "fields"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the data model entity (e.g., Process, File, Flow, Registry)"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of this data model entity and its semantics"
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "description"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Action name (e.g., create, terminate, access, load)"
+              },
+              "description": {
+                "type": "string",
+                "description": "Description of when/how this action occurs"
+              }
+            }
+          },
+          "minItems": 1,
+          "description": "Actions that can be performed on this entity"
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "description"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Field name (e.g., fqdn, pid, command_line, image_path)"
+              },
+              "description": {
+                "type": "string",
+                "description": "Detailed description of the field and its semantics"
+              },
+              "example": {
+                "type": "string",
+                "description": "Example value for this field"
+              }
+            }
+          },
+          "minItems": 1,
+          "description": "Fields/attributes available for this data model entity"
+        }
+      }
+    },
+    "sensor": {
+      "$id": "#/definitions/sensor",
+      "title": "CAR Sensor Definition",
+      "description": "Sensor capability definition showing how a data source maps to CAR data model entities and actions",
+      "type": "object",
+      "required": ["sensor_name", "sensor_version", "sensor_developer", "sensor_url", "sensor_description", "mappings"],
+      "properties": {
+        "sensor_name": {
+          "type": "string",
+          "description": "Name of the data source/sensor (e.g., Sysmon, osquery, auditd)"
+        },
+        "sensor_version": {
+          "type": "string",
+          "description": "Version of the sensor (e.g., 11.0, 4.6.0)"
+        },
+        "sensor_developer": {
+          "type": "string",
+          "description": "Developer organization (e.g., Microsoft, Osquery Foundation)"
+        },
+        "sensor_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to official sensor documentation"
+        },
+        "sensor_description": {
+          "type": "string",
+          "description": "Description of the sensor and its purpose"
+        },
+        "mappings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["object", "action", "notes", "fields"],
+            "properties": {
+              "object": {
+                "type": "string",
+                "description": "CAR data model object being mapped (e.g., file, driver, flow, process)"
+              },
+              "action": {
+                "type": "string",
+                "description": "Action on the object (e.g., create, load, start, send)"
+              },
+              "notes": {
+                "type": "string",
+                "description": "Implementation notes for this mapping (e.g., Event ID reference)"
+              },
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "description": "CAR data model fields populated by this sensor event"
+              }
+            }
+          },
+          "minItems": 1,
+          "description": "Mappings from sensor events to CAR data model entities and actions"
+        }
+      }
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/definitions/analytic"
+    },
+    {
+      "$ref": "#/definitions/datamodel"
+    },
+    {
+      "$ref": "#/definitions/sensor"
+    }
+  ]
+}

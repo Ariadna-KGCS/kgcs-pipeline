@@ -1,0 +1,21 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+.venv/
+venv/
+.vscode/
+.idea/
+.DS_Store
+*.swp
+*~
+.env
+data/raw/
+*.log
+logs/
+
+# Pinned spec materialization (see SPEC_VERSION)
+spec/
+
+# Local conda environment
+.conda/
