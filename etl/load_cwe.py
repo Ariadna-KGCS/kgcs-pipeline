@@ -7,6 +7,15 @@ targets Vulnerability nodes created there).
 Node types created:
   - Weakness  (cweId unique key, e.g. "CWE-79")
 
+Node properties (spec: ontology/standards/cwe-ontology-v1.0.owl +
+ontology/standards/cwe-enrichment-v1.0.owl; field table in
+mappings/cwe-enrichment-to-owl-v1.0.md):
+  identity   : cweId, name, abstraction
+  enrichment : description, extendedDescription, mappingUsage,
+               mappingReasons, structure, status, alternateTerms,
+               likelihoodOfExploit, functionalAreas, affectedResources,
+               modesOfIntroduction, ordinalities
+
 Relationships created:
   - (Vulnerability)-[:CAUSED_BY]->(Weakness)
 
@@ -15,8 +24,22 @@ Data sources (already downloaded):
   - data/raw/CVE/nvdcve-2.0-*.json  (re-read for weaknesses[] array)
 
 XML streaming:
-  iterparse() is used so the full 30 MB XML is never held in memory
-  as a DOM tree.  Only Weakness element start events are captured.
+  iterparse() with "end" events is used so the full 30 MB XML is never
+  held in memory as a DOM tree. Each Weakness subtree is complete when
+  its end event fires; it is extracted and then cleared.
+
+Idempotent refresh:
+  Node properties are written with `SET w += row.props`, so re-running
+  against a newer CWE catalog refreshes existing nodes (the pre-1.1
+  loader used ON CREATE SET only and never refreshed). Optional fields
+  absent from the catalog are passed as explicit nulls, which `+=`
+  removes — a property dropped upstream disappears on refresh instead
+  of lingering stale.
+
+Deprecated entries:
+  Weaknesses with Status Deprecated/Obsolete are loaded WITH their
+  status flag (legacy NVD CAUSED_BY edges may target them). Filtering
+  is the query layer's job, driven by `status` and `mappingUsage`.
 
 CAUSED_BY coverage note:
   Many CVE records use NVD placeholder IDs ("NVD-CWE-Other",
@@ -30,7 +53,7 @@ import logging
 import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Any, Dict, Generator, List, Tuple
+from typing import Any, Dict, Generator, List, Optional, Tuple
 
 from .base import AbstractETL
 
@@ -39,16 +62,22 @@ logger = logging.getLogger(__name__)
 _CWE_NS = "http://cwe.mitre.org/cwe-7"
 _NVD_SKIP_PREFIXES = ("NVD-CWE-",)
 
+
+def _q(tag: str) -> str:
+    """Namespace-qualify a CWE XML tag."""
+    return f"{{{_CWE_NS}}}{tag}"
+
+
 # ---------------------------------------------------------------------------
 # Cypher statements
 # ---------------------------------------------------------------------------
 
+# `SET w +=` both creates and refreshes properties; explicit nulls in
+# row.props remove stale optional properties on re-ingest.
 _CYPHER_WEAKNESS = """\
 UNWIND $batch AS row
 MERGE (w:Weakness {cweId: row.cweId})
-ON CREATE SET
-    w.name        = row.name,
-    w.abstraction = row.abstraction
+SET w += row.props
 """
 
 _CYPHER_CAUSED_BY = """\
@@ -63,22 +92,93 @@ MERGE (v)-[:CAUSED_BY]->(w)
 # XML extraction helpers
 # ---------------------------------------------------------------------------
 
+def _flatten_text(elem: Optional[ET.Element]) -> str:
+    """Flatten a (possibly StructuredText/XHTML) element to plain text.
+
+    Concatenates all text nodes in document order and collapses
+    consecutive whitespace to single spaces (mapping doc rule 1).
+    """
+    if elem is None:
+        return ""
+    return " ".join("".join(elem.itertext()).split())
+
+
+def _texts(parent: ET.Element, path: str) -> List[str]:
+    """Collect flattened, deduplicated, non-empty texts at a subpath.
+
+    Deduplication preserves first-seen document order (mapping doc
+    rule 2).
+    """
+    values = (_flatten_text(e) for e in parent.findall(path))
+    return list(dict.fromkeys(v for v in values if v))
+
+
+def _extract_weakness(elem: ET.Element) -> Dict:
+    """Extract one Weakness element subtree into a Neo4j-ready record.
+
+    Returns {"cweId": ..., "props": {...}} where props holds every
+    identity + enrichment property. Absent optional values are explicit
+    None so `SET +=` removes stale properties on refresh; empty arrays
+    are never stored (mapping doc rule 2).
+    """
+    mapping_notes = elem.find(_q("Mapping_Notes"))
+    if mapping_notes is not None:
+        mapping_usage = _flatten_text(mapping_notes.find(_q("Usage"))) or None
+        mapping_reasons = list(dict.fromkeys(
+            r.get("Type") for r in
+            mapping_notes.findall(f"{_q('Reasons')}/{_q('Reason')}")
+            if r.get("Type")
+        ))
+    else:
+        mapping_usage = None
+        mapping_reasons = []
+
+    props: Dict[str, Any] = {
+        # identity (cwe-ontology-v1.0)
+        "name":        elem.get("Name", ""),
+        "abstraction": elem.get("Abstraction", ""),
+        # enrichment (cwe-enrichment-v1.0) — XSD-required
+        "description":  _flatten_text(elem.find(_q("Description"))) or None,
+        "structure":    elem.get("Structure") or None,
+        "status":       elem.get("Status") or None,
+        "mappingUsage": mapping_usage,
+        # enrichment — optional scalars
+        "extendedDescription":
+            _flatten_text(elem.find(_q("Extended_Description"))) or None,
+        "likelihoodOfExploit":
+            _flatten_text(elem.find(_q("Likelihood_Of_Exploit"))) or None,
+        # enrichment — multi-valued (arrays; None when empty)
+        "mappingReasons": mapping_reasons or None,
+        "alternateTerms": _texts(
+            elem, f"{_q('Alternate_Terms')}/{_q('Alternate_Term')}/{_q('Term')}"
+        ) or None,
+        "functionalAreas": _texts(
+            elem, f"{_q('Functional_Areas')}/{_q('Functional_Area')}"
+        ) or None,
+        "affectedResources": _texts(
+            elem, f"{_q('Affected_Resources')}/{_q('Affected_Resource')}"
+        ) or None,
+        "modesOfIntroduction": _texts(
+            elem, f"{_q('Modes_Of_Introduction')}/{_q('Introduction')}/{_q('Phase')}"
+        ) or None,
+        "ordinalities": _texts(
+            elem,
+            f"{_q('Weakness_Ordinalities')}/{_q('Weakness_Ordinality')}/{_q('Ordinality')}"
+        ) or None,
+    }
+    return {"cweId": f"CWE-{elem.get('ID', '')}", "props": props}
+
+
 def _iter_weakness_nodes(xml_path: Path) -> Generator[Dict, None, None]:
-    """Stream Weakness elements from the CWE XML using iterparse."""
-    ns_weakness = f"{{{_CWE_NS}}}Weakness"
+    """Stream complete Weakness subtrees from the CWE XML using iterparse."""
+    ns_weakness = _q("Weakness")
     try:
-        context = ET.iterparse(str(xml_path), events=("start",))
+        context = ET.iterparse(str(xml_path), events=("end",))
         for event, elem in context:
             if elem.tag == ns_weakness:
-                cwe_id_raw = elem.get("ID", "")
-                if not cwe_id_raw:
-                    continue
-                yield {
-                    "cweId":       f"CWE-{cwe_id_raw}",
-                    "name":        elem.get("Name", ""),
-                    "abstraction": elem.get("Abstraction", ""),
-                }
-                elem.clear()   # release memory
+                if elem.get("ID"):
+                    yield _extract_weakness(elem)
+                elem.clear()   # release the finished subtree
     except Exception as exc:
         logger.error(f"[CWE] Failed parsing {xml_path}: {exc}")
 
