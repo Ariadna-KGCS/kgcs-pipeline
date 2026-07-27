@@ -47,7 +47,7 @@ The script is idempotent: it wipes and rebuilds the gitignored `spec/` from the 
 
 ## Status
 
-Migrated from the seed repo (Release B baseline). Pinned to `kgcs-spec` **v1.0.0**. Raw data not migrated — re-download with `python download.py --standard all`.
+Migrated from the seed repo (Release B baseline). Pinned to `kgcs-spec` **v1.0.0**. Raw data not migrated — re-download with `python download.py --standard all`. **CI added 2026-07-27**: `Test` workflow runs `sync_spec.py` + `sync_spec.py --check` + `pytest tests/` — 18/18 green on `main`. Already public; independent `gitleaks` scan clean.
 
 ## License
 
