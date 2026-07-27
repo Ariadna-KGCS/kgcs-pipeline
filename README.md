@@ -2,6 +2,24 @@
 
 Builds the KGCS Neo4j graph from the 10 authoritative sources (NVD and MITRE feeds), following the causal chain defined by [kgcs-spec](https://github.com/Ariadna-KGCS/kgcs-spec). Part of the [Ariadna-KGCS organization](https://github.com/Ariadna-KGCS).
 
+## How it works
+
+```mermaid
+flowchart LR
+    subgraph Sources["10 authoritative sources"]
+        NVD["NVD feed"]
+        MITRE["MITRE feeds"]
+    end
+    SPEC(["kgcs-spec pin\n(sync_spec.py)"]) -.-> ETL
+    NVD --> DL["download.py"]
+    MITRE --> DL
+    DL --> ETL["run_all_etl.py\ncausal-chain order:\nconstraints -> nodes -> relationships"]
+    ETL --> NEO[("Neo4j\nKGCS graph")]
+
+    classDef accent fill:#1F4E79,color:#fff,stroke:#2E6CB5;
+    class ETL accent;
+```
+
 ## Quickstart
 
 ```bash
