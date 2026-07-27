@@ -14,7 +14,7 @@ cp .env.example .env                       # set NEO4J_URI / NEO4J_USER / NEO4J_
 python run_all_etl.py                      # constraints → nodes → relationships
 ```
 
-Requires Python 3.11+ and a running Neo4j 5.x instance.
+Requires Python 3.11+ and a running Neo4j instance (2026.05.x recommended; Community edition is fine here — this pipeline builds the graph fresh via ETL, it never loads the Enterprise-only Block-format dump. See [kgcs-server's install guide](https://github.com/Ariadna-KGCS/kgcs-server/blob/main/docs/mcp/install-guide.md) for why the version/edition matters).
 
 ## Layout
 
