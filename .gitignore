@@ -19,3 +19,7 @@ spec/
 
 # Local conda environment
 .conda/
+
+# Local tooling binaries
+gitleaks.exe
+gitleaks
