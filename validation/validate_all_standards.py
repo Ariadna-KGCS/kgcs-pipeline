@@ -103,6 +103,31 @@ _POST_LOAD_CHECKS: List[Tuple[str, str, str]] = [
         "RETURN count(vcn) AS n",
         "Every VulnerabilityConfigurationNode has exactly one HAS_NODE parent",
     ),
+    # Causal-chain shortcut guards (Seeds: archaeology/GraphDatabase_2023
+    # Obs 002 + review residual uncertainty). The chain is
+    # CPE -> CVE/CVSS -> CWE -> CAPEC -> ATT&CK -> countermeasures; any edge
+    # that skips a hop is forbidden regardless of type.
+    (
+        "no_cve_to_attck_shortcut",
+        "MATCH (v:Vulnerability)-[r]->(x) "
+        "WHERE x:Technique OR x:SubTechnique OR x:Tactic OR x:AttackPattern "
+        "RETURN count(r) AS n",
+        "No shortcut edges CVE→CAPEC/ATT&CK (chain must pass through CWE)",
+    ),
+    (
+        "no_platform_shortcut",
+        "MATCH (p:Platform)-[r]->(x) "
+        "WHERE x:Vulnerability OR x:Weakness "
+        "RETURN count(r) AS n",
+        "No Platform→Vulnerability/Weakness shortcuts (must go via PlatformConfiguration and AFFECTS direction)",
+    ),
+    (
+        "no_cwe_to_attck_shortcut",
+        "MATCH (w:Weakness)-[r]->(x) "
+        "WHERE x:Technique OR x:SubTechnique OR x:Tactic "
+        "RETURN count(r) AS n",
+        "No shortcut edges CWE→ATT&CK (chain must pass through CAPEC)",
+    ),
 ]
 
 
@@ -174,6 +199,48 @@ def _validate_shacl(
 # Post-load Cypher checks
 # ---------------------------------------------------------------------------
 
+def _check_constraints_present(writer) -> Tuple[bool, List[str]]:
+    """Verify every expected uniqueness constraint physically exists in the DB.
+
+    Seeds: archaeology/GraphDatabase_2023 Obs 003 + review residual
+    uncertainty ("no direct evidence for indexes, uniqueness constraints,
+    or load-order enforcement in production"). This check IS that evidence:
+    it compares SHOW CONSTRAINTS output against the single source of truth
+    in etl.init_constraints.UNIQUE_CONSTRAINTS.
+
+    Returns (passed, [failure_messages]).
+    """
+    from etl.init_constraints import UNIQUE_CONSTRAINTS
+
+    pairs = writer.read_one(
+        "SHOW CONSTRAINTS YIELD type, labelsOrTypes, properties "
+        "WHERE type CONTAINS 'UNIQUENESS' "
+        "RETURN collect([labelsOrTypes[0], properties[0]]) AS pairs"
+    )
+    if pairs is None:
+        return False, [
+            "FAIL [constraints_present]: SHOW CONSTRAINTS returned no result"
+        ]
+
+    present = {(label, prop) for label, prop in pairs}
+    missing = [
+        (label, prop)
+        for label, prop in UNIQUE_CONSTRAINTS
+        if (label, prop) not in present
+    ]
+    if missing:
+        return False, [
+            f"FAIL [constraints_present]: missing uniqueness constraint "
+            f"{label}.{prop}"
+            for label, prop in missing
+        ]
+    logger.info(
+        f"PASS [constraints_present]: all {len(UNIQUE_CONSTRAINTS)} expected "
+        f"uniqueness constraints exist in the database"
+    )
+    return True, []
+
+
 def _run_post_load_checks() -> Tuple[bool, List[str]]:
     """Run all Cypher post-load integrity checks.
 
@@ -191,6 +258,13 @@ def _run_post_load_checks() -> Tuple[bool, List[str]]:
     failures: List[str] = []
     try:
         with Neo4jWriter() as writer:
+            # Schema evidence first: graph-shape checks below assume the
+            # uniqueness constraints that make MERGE deduplication reliable.
+            ok, msgs = _check_constraints_present(writer)
+            if not ok:
+                for msg in msgs:
+                    logger.error(msg)
+                failures.extend(msgs)
             total = len(_POST_LOAD_CHECKS)
             for idx, (check_name, cypher, description) in enumerate(
                 _POST_LOAD_CHECKS, 1

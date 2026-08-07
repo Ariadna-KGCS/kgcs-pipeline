@@ -48,6 +48,12 @@ UNIQUE_CONSTRAINTS: List[tuple] = [
     ("DetectionAnalytic",     "analyticId"),
     # SHIELD
     ("DeceptionTechnique",    "techniqueId"),
+    # ENGAGE — one label, three key namespaces (activities, approaches, goals).
+    # Neo4j uniqueness constraints exempt null values, so per-property
+    # constraints on the same label do not collide across the three subtypes.
+    ("EngagementConcept",     "activityId"),
+    ("EngagementConcept",     "approachId"),
+    ("EngagementConcept",     "goalId"),
 ]
 
 # ---------------------------------------------------------------------------
