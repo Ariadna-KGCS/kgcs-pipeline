@@ -6,6 +6,9 @@ requests>=2.28.0
 # YAML configuration parsing (download config + CAR analytics)
 PyYAML>=6.0
 
+# Streaming JSON parsing — chunking of multi-GB NVD CPE/CPE-MATCH feeds
+ijson>=3.2.0
+
 # Neo4j Python driver — ETL writes, stats extraction (write access is pipeline-only)
 neo4j>=5.0.0
 

@@ -153,7 +153,22 @@ class UniversalDownloader(AbstractDownloader):
                     with zipfile.ZipFile(zip_file, 'r') as zf:
                         zf.extractall(cpe_dir)
                     zip_file.unlink()
-                    self.log_success("CPE: Downloaded and extracted")
+                    # The NVD zip ships the chunked layout directly
+                    # (nvdcpe-2.0-chunks/*.json — verified 2026-08-07).
+                    # Fallback: if NVD ever reverts to a single big JSON,
+                    # chunk it into the layout load_cpe.py streams.
+                    chunks_dir = cpe_dir / "nvdcpe-2.0-chunks"
+                    if not any(chunks_dir.glob("*.json")):
+                        from .chunker import chunk_nvd_file
+                        jsons = sorted(cpe_dir.glob("*.json"),
+                                       key=lambda p: p.stat().st_size)
+                        if not jsons:
+                            raise FileNotFoundError(
+                                f"No chunks and no JSON extracted in {cpe_dir}")
+                        chunk_nvd_file(jsons[-1], chunks_dir,
+                                       "products", "nvdcpe-2.0")
+                    n = len(list(chunks_dir.glob("*.json")))
+                    self.log_success(f"CPE: Downloaded and extracted ({n} chunk files)")
                     return True
                 except Exception as e:
                     self.log_warning(f"CPE extraction failed: {e}")
@@ -181,7 +196,21 @@ class UniversalDownloader(AbstractDownloader):
                     with zipfile.ZipFile(zip_file, 'r') as zf:
                         zf.extractall(cpematch_dir)
                     zip_file.unlink()
-                    self.log_success("CPE Match: Downloaded and extracted")
+                    # The NVD zip ships the chunked layout directly
+                    # (nvdcpematch-2.0-chunks/*.json — verified 2026-08-07).
+                    # Fallback: chunk a single big JSON if NVD reverts.
+                    chunks_dir = cpematch_dir / "nvdcpematch-2.0-chunks"
+                    if not any(chunks_dir.glob("*.json")):
+                        from .chunker import chunk_nvd_file
+                        jsons = sorted(cpematch_dir.glob("*.json"),
+                                       key=lambda p: p.stat().st_size)
+                        if not jsons:
+                            raise FileNotFoundError(
+                                f"No chunks and no JSON extracted in {cpematch_dir}")
+                        chunk_nvd_file(jsons[-1], chunks_dir,
+                                       "matchStrings", "nvdcpematch-2.0")
+                    n = len(list(chunks_dir.glob("*.json")))
+                    self.log_success(f"CPE Match: Downloaded and extracted ({n} chunk files)")
                     return True
                 except Exception as e:
                     self.log_warning(f"CPE Match extraction failed: {e}")
