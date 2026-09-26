@@ -98,3 +98,44 @@ def test_child_of_complete_after_one_run_and_unchanged_by_a_second(tmp_path):
     # CAPEC-999 is not an AttackPattern: that ChildOf never lands.
     assert after_one == {("CAPEC-2", "CAPEC-1"), ("CAPEC-3", "CAPEC-1")}
     assert after_two == after_one
+
+
+def test_capec_run_reports_each_edge_type_separately(tmp_path, caplog):
+    from etl.load_capec import CAPECLoader
+
+    class CountingWriter:
+        def execute_batch(self, cypher, params_list, batch_size=1000):
+            nodes = len(params_list) if "MERGE (ap:AttackPattern" in cypher else 0
+            rels = 0 if nodes else len(params_list)
+            return {"success": True, "nodes_created": nodes, "rels_created": rels, "errors": []}
+
+    capec_dir = tmp_path / "raw" / "CAPEC"
+    capec_dir.mkdir(parents=True)
+    (capec_dir / "capec_latest.xml").write_text(
+        """<?xml version="1.0" encoding="UTF-8"?>
+<Attack_Pattern_Catalog xmlns="http://capec.mitre.org/capec-3">
+  <Attack_Patterns>
+    <Attack_Pattern ID="2" Name="Child" Status="Stable">
+      <Related_Weaknesses>
+        <Related_Weakness CWE_ID="79" /><Related_Weakness CWE_ID="89" />
+      </Related_Weaknesses>
+      <Related_Attack_Patterns><Related_Attack_Pattern Nature="ChildOf" CAPEC_ID="1" /></Related_Attack_Patterns>
+    </Attack_Pattern>
+    <Attack_Pattern ID="1" Name="Parent" Status="Deprecated" />
+  </Attack_Patterns>
+</Attack_Pattern_Catalog>
+""",
+        encoding="utf-8",
+    )
+    with caplog.at_level("INFO"):
+        result = CAPECLoader(str(tmp_path / "raw"), CountingWriter(), batch_size=100).run()
+
+    stats = result["stats"]
+    assert stats["nodes_created"] == 2
+    assert stats["demonstrated_by_created"] == 2
+    assert stats["child_of_created"] == 1
+    assert stats["rels_created"] == 3
+    assert (
+        "2 AttackPattern nodes, 2 DEMONSTRATED_BY edges, 1 CHILD_OF edges created "
+        "(1 deprecated nodes included)"
+    ) in caplog.text

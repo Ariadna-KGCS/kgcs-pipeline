@@ -145,7 +145,7 @@ def _iter_capec_records(
 
 
 class CAPECLoader(AbstractETL):
-    """ETL loader for CAPEC AttackPattern nodes and DEMONSTRATED_BY edges."""
+    """ETL loader for CAPEC AttackPattern nodes, DEMONSTRATED_BY and CHILD_OF edges."""
 
     @property
     def standard_name(self) -> str:
@@ -170,6 +170,8 @@ class CAPECLoader(AbstractETL):
             "stats":   {
                 "nodes_created": 0,
                 "rels_created":  0,
+                "demonstrated_by_created": 0,
+                "child_of_created":        0,
                 "deprecated":    0,
             },
         }
@@ -184,7 +186,6 @@ class CAPECLoader(AbstractETL):
                 return result
 
             nodes_created = 0
-            rels_created  = 0
             deprecated    = 0
             errors: List[str] = []
 
@@ -216,19 +217,24 @@ class CAPECLoader(AbstractETL):
                     _flush_nodes()
             _flush_nodes()
 
-            for cypher, rows in (
-                (_CYPHER_DEMONSTRATED_BY,
+            created: Dict[str, int] = {}
+            for name, cypher, rows in (
+                ("DEMONSTRATED_BY", _CYPHER_DEMONSTRATED_BY,
                  [{"cweId": w, "capecId": c} for w, c in demonstrated_by]),
-                (_CYPHER_CHILD_OF,
+                ("CHILD_OF", _CYPHER_CHILD_OF,
                  [{"childCapecId": ch, "parentCapecId": pa} for ch, pa in child_of_pairs]),
             ):
+                created[name] = 0
                 if rows:
                     r = self.writer.execute_batch(cypher, rows, self.batch_size)
-                    rels_created += r.get("rels_created", 0)
+                    created[name] = r.get("rels_created", 0)
                     errors.extend(r.get("errors", []))
+            rels_created = sum(created.values())
 
             result["stats"]["nodes_created"] = nodes_created
             result["stats"]["rels_created"]  = rels_created
+            result["stats"]["demonstrated_by_created"] = created["DEMONSTRATED_BY"]
+            result["stats"]["child_of_created"]        = created["CHILD_OF"]
             result["stats"]["deprecated"]    = deprecated
             result["errors"]  = errors
             result["success"] = len(errors) == 0
@@ -236,7 +242,8 @@ class CAPECLoader(AbstractETL):
             if result["success"]:
                 self.log_success(
                     f"Complete: {nodes_created} AttackPattern nodes, "
-                    f"{rels_created} DEMONSTRATED_BY edges "
+                    f"{created['DEMONSTRATED_BY']} DEMONSTRATED_BY edges, "
+                    f"{created['CHILD_OF']} CHILD_OF edges created "
                     f"({deprecated} deprecated nodes included)"
                 )
             else:
