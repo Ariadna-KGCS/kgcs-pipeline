@@ -22,6 +22,10 @@ Deprecation policy:
 SHACL invariant enforced here:
   SH-CORE-05: IMPLEMENTS source must be AttackPattern (loader creates the
   nodes on which load_attck.py will later hang IMPLEMENTS edges).
+
+IMPLEMENTS is written only by load_attck.py (spec 1.1.0 coverage matrix):
+it needs the ATT&CK bundles for the revoked-by remap and the sub-technique
+roll-up, and Technique nodes do not exist yet at this step.
 """
 
 import logging
@@ -57,16 +61,6 @@ MATCH (ap:AttackPattern {capecId: row.capecId})
 MERGE (w)-[:DEMONSTRATED_BY]->(ap)
 """
 
-_CYPHER_IMPLEMENTS = """\
-UNWIND $batch AS row
-MATCH (ap:AttackPattern {capecId: row.capecId})
-OPTIONAL MATCH (tt:Technique {attackId: row.attackId})
-OPTIONAL MATCH (ts:SubTechnique {attackId: row.attackId})
-WITH row, ap, coalesce(tt, ts) AS t
-WHERE t IS NOT NULL
-MERGE (ap)-[:IMPLEMENTS]->(t)
-"""
-
 _CYPHER_CHILD_OF = """\
 UNWIND $batch AS row
 MATCH (child:AttackPattern {capecId: row.childCapecId})
@@ -81,18 +75,15 @@ MERGE (child)-[:CHILD_OF]->(parent)
 
 def _iter_capec_records(
     xml_path: Path,
-) -> Generator[Tuple[Dict, List[Dict], List[Dict], List[Dict]], None, None]:
-    """Yield per-Attack_Pattern records for nodes plus CAPEC/CWE/ATT&CK relationships.
+) -> Generator[Tuple[Dict, List[Dict], List[Dict]], None, None]:
+    """Yield per-Attack_Pattern records for nodes plus CAPEC/CWE relationships.
 
     cwe_edge_dicts:        {cweId, capecId} for DEMONSTRATED_BY.
-    implements_edge_dicts: {capecId, attackId} for IMPLEMENTS (from ATT&CK Taxonomy_Mapping).
     child_of_dicts:        {childCapecId, parentCapecId} for CAPEC ChildOf hierarchy.
     """
     ap_tag  = f"{{{_CAPEC_NS}}}Attack_Pattern"
     rw_tag  = f"{{{_CAPEC_NS}}}Related_Weakness"
     rws_tag = f"{{{_CAPEC_NS}}}Related_Weaknesses"
-    tm_tag  = f"{{{_CAPEC_NS}}}Taxonomy_Mapping"
-    ei_tag  = f"{{{_CAPEC_NS}}}Entry_ID"
 
     try:
         context = ET.iterparse(str(xml_path), events=("start", "end"))
@@ -123,21 +114,6 @@ def _iter_capec_records(
                                 "capecId": current_ap["capecId"],
                             })
 
-                # Collect ATT&CK Taxonomy_Mapping entries for IMPLEMENTS
-                implements: List[Dict] = []
-                for tm in elem.iter(tm_tag):
-                    tname = tm.get("Taxonomy_Name", "")
-                    if "ATTACK" in tname.upper():
-                        entry_id_elem = tm.find(ei_tag)
-                        if entry_id_elem is not None and entry_id_elem.text:
-                            raw_id = entry_id_elem.text.strip()
-                            # Prefix with T if not already present
-                            attack_id = raw_id if raw_id.startswith("T") else f"T{raw_id}"
-                            implements.append({
-                                "capecId":  current_ap["capecId"],
-                                "attackId": attack_id,
-                            })
-
                 child_of: List[Dict] = []
                 related_parent_tag = f"{{{_CAPEC_NS}}}Related_Attack_Pattern"
                 related_patterns_tag = f"{{{_CAPEC_NS}}}Related_Attack_Patterns"
@@ -152,7 +128,7 @@ def _iter_capec_records(
                                 "parentCapecId": f"CAPEC-{parent_capec}",
                             })
 
-                yield current_ap, edges, implements, child_of
+                yield current_ap, edges, child_of
                 elem.clear()
                 in_ap = False
                 current_ap = {}
@@ -207,7 +183,6 @@ class CAPECLoader(AbstractETL):
 
             ap_batch:   List[Dict] = []
             rel_batch:  List[Dict] = []
-            impl_batch: List[Dict] = []
             child_batch: List[Dict] = []
 
             def _flush():
@@ -226,13 +201,6 @@ class CAPECLoader(AbstractETL):
                     rels_created += r.get("rels_created", 0)
                     errors.extend(r.get("errors", []))
                     rel_batch.clear()
-                if impl_batch:
-                    r = self.writer.execute_batch(
-                        _CYPHER_IMPLEMENTS, impl_batch, self.batch_size
-                    )
-                    rels_created += r.get("rels_created", 0)
-                    errors.extend(r.get("errors", []))
-                    impl_batch.clear()
                 if child_batch:
                     r = self.writer.execute_batch(
                         _CYPHER_CHILD_OF, child_batch, self.batch_size
@@ -241,12 +209,11 @@ class CAPECLoader(AbstractETL):
                     errors.extend(r.get("errors", []))
                     child_batch.clear()
 
-            for ap, edges, implements, child_of in _iter_capec_records(xml_path):
+            for ap, edges, child_of in _iter_capec_records(xml_path):
                 if ap.get("status") == "Deprecated":
                     deprecated += 1
                 ap_batch.append(ap)
                 rel_batch.extend(edges)
-                impl_batch.extend(implements)
                 child_batch.extend(child_of)
                 if (
                     len(ap_batch) >= self.batch_size

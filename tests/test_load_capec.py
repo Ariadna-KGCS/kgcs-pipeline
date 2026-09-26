@@ -32,11 +32,12 @@ def test_iter_capec_records_extracts_child_of_relationships():
 
         records = list(_iter_capec_records(xml_path))
         assert len(records) == 1
-        ap, weakness_edges, implements_edges, child_of_edges = records[0]
+        # ATT&CK Taxonomy_Mappings are not yielded: IMPLEMENTS is written by
+        # load_attck.py (revoked-by remap + roll-up), never by load_capec.py.
+        ap, weakness_edges, child_of_edges = records[0]
 
         assert ap["capecId"] == "CAPEC-85"
         assert weakness_edges == [{"cweId": "CWE-79", "capecId": "CAPEC-85"}]
-        assert implements_edges == [{"capecId": "CAPEC-85", "attackId": "T1082"}]
         assert child_of_edges == [{"childCapecId": "CAPEC-85", "parentCapecId": "CAPEC-580"}]
     finally:
         if xml_path.exists():

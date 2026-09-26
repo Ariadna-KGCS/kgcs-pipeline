@@ -74,6 +74,24 @@ _POST_LOAD_CHECKS: List[Tuple[str, str, str]] = [
         "Every Technique belongs to at least one Tactic",
     ),
     (
+        "part_of_domain_coherence",
+        "MATCH (t)-[:PART_OF]->(ta:Tactic) "
+        "WHERE any(d IN ta.domains WHERE NOT d IN t.domains) "
+        "RETURN count(*) AS n",
+        "Every PART_OF Tactic domain is one of the Technique's domains "
+        "(spec 1.1.0 attack:PartOfDomainCoherenceShape)",
+    ),
+    (
+        "caused_by_provenance_aligned",
+        "MATCH (:Vulnerability)-[r:CAUSED_BY]->(:Weakness) "
+        "WHERE r.sources IS NOT NULL AND NOT ("
+        "  size(r.sources) > 0 AND size(r.sources) = size(r.sourceRoles) "
+        "  AND size(r.sources) = size(r.types)) "
+        "RETURN count(r) AS n",
+        "CAUSED_BY provenance lists are non-empty and index-aligned "
+        "(spec 1.1.0 ADR-0002; edges without provenance are only a Warning)",
+    ),
+    (
         "no_duplicate_cvss_per_cve",
         "MATCH (v:Vulnerability)-[:HAS_SCORE]->(s:Score) "
         "WITH v, s.version AS ver, count(*) AS c WHERE c > 1 RETURN count(c) AS n",

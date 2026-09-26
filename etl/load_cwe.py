@@ -23,6 +23,24 @@ CAUSED_BY coverage note:
   "NVD-CWE-noinfo") that do not map to real CWE nodes. These are
   skipped and counted in the stats dict.  The SHACL shape allows
   minCount 0 on CAUSED_BY, so this is expected and not an error.
+
+CAUSED_BY provenance (spec 1.1.0, ADR-0002, cve-to-owl-v1.0.md v1.1):
+  Exactly one edge per (CVE, CWE) pair, carrying three index-aligned
+  string lists, one entry per weaknesses[] entry that names that CWE, in
+  document order, exact (source, type) duplicates collapsed:
+    sources      raw weaknesses[].source
+    sourceRoles  nvd (nvd@nist.gov) | adp (declared ADP list) | cna
+    types        Primary | Secondary
+  The lists are aggregated per CVE in Python, then the edge is MERGEd on
+  its endpoints and the lists are SET (replaced, never appended), so
+  re-runs stay idempotent.
+
+  A CVE can have more than one record (nvdcve-2.0-modified.json and its
+  per-year file). The record with the greatest cve.lastModified supplies
+  the lists of every pair it names (see _NewestRecordRule). The edge set
+  stays the union of all records, as in v1.0; pairs named only by an older
+  record keep their edge with that record's lists and are counted
+  ("pairs_only_in_older", 0 on the 2026-09-06 data).
 """
 
 import json
@@ -30,7 +48,7 @@ import logging
 import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Any, Dict, Generator, List, Tuple
+from typing import Any, Dict, Generator, Iterable, List, Optional, Set, Tuple
 
 from .base import AbstractETL
 
@@ -38,6 +56,14 @@ logger = logging.getLogger(__name__)
 
 _CWE_NS = "http://cwe.mitre.org/cwe-7"
 _NVD_SKIP_PREFIXES = ("NVD-CWE-",)
+
+# sourceRoles vocabulary (ADR-0002). The declared ADP list lives in the spec
+# (mappings/cve-to-owl-v1.0.md, "Declared ADP identifiers"); keep this set
+# equal to it (tests/test_load_cwe.py checks it against the pinned spec).
+_NVD_SOURCE = "nvd@nist.gov"
+_DECLARED_ADP_SOURCES = frozenset({
+    "134c704f-9b21-4f2e-91b3-4a467353bcc0",   # CISA ADP
+})
 
 # ---------------------------------------------------------------------------
 # Cypher statements
@@ -55,7 +81,10 @@ _CYPHER_CAUSED_BY = """\
 UNWIND $batch AS row
 MATCH (v:Vulnerability {cveId: row.cveId})
 MATCH (w:Weakness {cweId: row.cweId})
-MERGE (v)-[:CAUSED_BY]->(w)
+MERGE (v)-[r:CAUSED_BY]->(w)
+SET r.sources     = row.sources,
+    r.sourceRoles = row.sourceRoles,
+    r.types       = row.types
 """
 
 
@@ -97,33 +126,130 @@ def _ordered_cve_files(cve_dir: Path) -> List[Path]:
     return files
 
 
-def _iter_caused_by_records(
-    path: Path,
-) -> Generator[tuple, None, None]:
-    """Yield (cve_id, cwe_id) pairs from CVE weaknesses[].
+def _source_role(source: str) -> str:
+    """Map a raw weaknesses[].source to its ADR-0002 role."""
+    if source == _NVD_SOURCE:
+        return "nvd"
+    if source in _DECLARED_ADP_SOURCES:
+        return "adp"
+    return "cna"
 
-    Also yields None for each skipped NVD placeholder so the caller can
-    count them.  Signature: yields (cve_id, cwe_id) or (cve_id, None).
-    """
+
+def _weakness_entries(cve: Dict) -> List[Tuple[str, str, str]]:
+    """Return (cwe value, source, type) per weaknesses[] description, document order."""
+    entries: List[Tuple[str, str, str]] = []
+    for weakness_block in cve.get("weaknesses", []):
+        source = weakness_block.get("source", "")
+        wtype = weakness_block.get("type", "")
+        for desc in weakness_block.get("description", []):
+            raw_id = desc.get("value", "")
+            if raw_id:
+                entries.append((raw_id, source, wtype))
+    return entries
+
+
+def _iter_cve_weaknesses(
+    path: Path,
+) -> Generator[Tuple[str, str, List[Tuple[str, str, str]]], None, None]:
+    """Yield (cve_id, lastModified, weakness entries) per CVE record of one NVD JSON file."""
     try:
         with open(path, encoding="utf-8") as fh:
             data = json.load(fh)
         for item in data.get("vulnerabilities", []):
             cve = item.get("cve", {})
             cve_id = cve.get("id", "")
-            if not cve_id:
-                continue
-            for weakness_block in cve.get("weaknesses", []):
-                for desc in weakness_block.get("description", []):
-                    raw_id = desc.get("value", "")
-                    if not raw_id:
-                        continue
-                    if any(raw_id.startswith(p) for p in _NVD_SKIP_PREFIXES):
-                        yield cve_id, None   # placeholder — skip
-                    else:
-                        yield cve_id, raw_id
+            if cve_id:
+                yield cve_id, cve.get("lastModified", ""), _weakness_entries(cve)
     except Exception as exc:
         logger.error(f"[CWE] Failed reading {path}: {exc}")
+
+
+class _NewestRecordRule:
+    """Decide which CAUSED_BY records of a CVE record to write.
+
+    The modified feed is read first and its records are remembered (a few
+    thousand CVEs). When a later file carries another record of the same
+    CVE, the record with the greater lastModified supplies the lists:
+
+      - later record newer: all its pairs are written (the SET replaces the
+        lists written from the older record);
+      - later record older or equally new: only its pairs that the
+        remembered record does not name are written.
+
+    Either way the edge set is the union of both records. Counters:
+      superseded          pairs named by both records (the older record's
+                          lists are not kept);
+      pairs_only_in_older pairs named only by the older record (edge kept
+                          with the older record's lists).
+    """
+
+    def __init__(self) -> None:
+        self._remembered: Dict[str, Tuple[str, Set[str]]] = {}
+        self.superseded = 0
+        self.pairs_only_in_older = 0
+
+    def remember(self, cve_id: str, last_modified: str, records: List[Dict]) -> List[Dict]:
+        """Register a modified-feed record; all its records are written."""
+        self._remembered[cve_id] = (last_modified, {r["cweId"] for r in records})
+        return records
+
+    def admit(self, cve_id: str, last_modified: str, records: List[Dict]) -> List[Dict]:
+        """Filter a later file's records for a CVE against the remembered record."""
+        prev = self._remembered.get(cve_id)
+        if prev is None:
+            return records
+        prev_modified, prev_cwes = prev
+        cwes = {r["cweId"] for r in records}
+        self.superseded += len(cwes & prev_cwes)
+        if last_modified > prev_modified:
+            self.pairs_only_in_older += len(prev_cwes - cwes)
+            return records
+        self.pairs_only_in_older += len(cwes - prev_cwes)
+        return [r for r in records if r["cweId"] not in prev_cwes]
+
+
+def _aggregate_caused_by(
+    cve_id: str,
+    entries: Iterable[Tuple[str, str, str]],
+    loaded_cwe_ids: Set[str],
+) -> Tuple[List[Dict], int, List[str]]:
+    """Aggregate one CVE's weakness entries into CAUSED_BY edge records.
+
+    Returns (records, placeholder entries skipped, unmapped CWE ids skipped
+    — one per entry). Records are one per kept CWE, first-seen order, with
+    index-aligned sources / sourceRoles / types lists; exact (source, type)
+    duplicates collapse, so a source that gives the same CWE as Primary and
+    Secondary keeps two entries.
+    """
+    by_cwe: Dict[str, List[Tuple[str, str]]] = {}
+    placeholders = 0
+    unmapped: List[str] = []
+    for cwe_id, source, wtype in entries:
+        if any(cwe_id.startswith(p) for p in _NVD_SKIP_PREFIXES):
+            placeholders += 1
+            continue
+        if cwe_id not in loaded_cwe_ids:
+            # Real CWE id, but not a Weakness in this XML release
+            # (typically a Category or View NVD still maps to on legacy
+            # CVEs, e.g. CWE-16, CWE-19, CWE-254).
+            unmapped.append(cwe_id)
+            continue
+        assignments = by_cwe.setdefault(cwe_id, [])
+        if (source, wtype) not in assignments:
+            assignments.append((source, wtype))
+
+    records = [
+        {
+            "cveId":       cve_id,
+            "cweId":       cwe_id,
+            "sources":     [src for src, _ in assignments],
+            "sourceRoles": [_source_role(src) for src, _ in assignments],
+            "types":       [wtype for _, wtype in assignments],
+        }
+        for cwe_id, assignments in by_cwe.items()
+    ]
+    return records, placeholders, unmapped
+
 
 
 class CWELoader(AbstractETL):
@@ -218,10 +344,13 @@ class CWELoader(AbstractETL):
                 return result
 
             rels_created = 0
+            edges_written = 0
             skipped = 0
             skipped_unmapped = 0
             unmapped_ids: set = set()
             rel_batch: List[Dict] = []
+            # Which record of a CVE supplies the provenance lists
+            newest = _NewestRecordRule()
 
             n_files = len(cve_files)
             for file_idx, path in enumerate(cve_files, 1):
@@ -229,19 +358,20 @@ class CWELoader(AbstractETL):
                     f"[CWE] Reading weaknesses from {path.name} "
                     f"({file_idx}/{n_files}, {file_idx * 100 // n_files}%)"
                 )
-                for cve_id, cwe_id in _iter_caused_by_records(path):
-                    if cwe_id is None:
-                        skipped += 1
-                        continue
-                    if cwe_id not in loaded_cwe_ids:
-                        # Real CWE id, but not a Weakness in this XML release
-                        # (typically a Category or View NVD still maps to on
-                        # legacy CVEs, e.g. CWE-16, CWE-19, CWE-254). The
-                        # MATCH would drop it silently; count it instead.
-                        skipped_unmapped += 1
-                        unmapped_ids.add(cwe_id)
-                        continue
-                    rel_batch.append({"cveId": cve_id, "cweId": cwe_id})
+                is_modified = path.name == "nvdcve-2.0-modified.json"
+                for cve_id, last_modified, entries in _iter_cve_weaknesses(path):
+                    records, placeholders, unmapped = _aggregate_caused_by(
+                        cve_id, entries, loaded_cwe_ids
+                    )
+                    skipped += placeholders
+                    skipped_unmapped += len(unmapped)
+                    unmapped_ids.update(unmapped)
+                    if is_modified:
+                        records = newest.remember(cve_id, last_modified, records)
+                    else:
+                        records = newest.admit(cve_id, last_modified, records)
+                    rel_batch.extend(records)
+                    edges_written += len(records)
                     if len(rel_batch) >= self.batch_size:
                         r = self.writer.execute_batch(
                             _CYPHER_CAUSED_BY, rel_batch, self.batch_size
@@ -261,14 +391,28 @@ class CWELoader(AbstractETL):
             result["stats"]["rels_created"]         = rels_created
             result["stats"]["skipped_nvd_ids"]      = skipped
             result["stats"]["skipped_unmapped_cwe"] = skipped_unmapped
+            result["stats"]["caused_by_records"]    = edges_written
+            result["stats"]["superseded_by_newer"]  = newest.superseded
+            result["stats"]["pairs_only_in_older"]  = newest.pairs_only_in_older
             result["errors"]  = errors
             result["success"] = len(errors) == 0
 
             self.log_success(
                 f"CAUSED_BY: {rels_created} created, "
+                f"{edges_written} edge records written with provenance lists "
+                f"({newest.superseded} pairs named by two records of a CVE, "
+                f"lists from the newest lastModified), "
                 f"{skipped} NVD placeholders skipped, "
                 f"{skipped_unmapped} unmapped CWE refs skipped"
             )
+            if newest.pairs_only_in_older:
+                self.log_warning(
+                    f"{newest.pairs_only_in_older} (CVE, CWE) pairs appear only in "
+                    "an older record than the newest one for their CVE (edge kept, "
+                    "lists from the older record)"
+                )
+            else:
+                self.log_success("0 (CVE, CWE) pairs appear only in an older record")
             if skipped_unmapped:
                 self.log_warning(
                     f"{skipped_unmapped} CAUSED_BY pairs reference "
