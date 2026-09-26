@@ -34,11 +34,12 @@ def test_iter_capec_records_extracts_child_of_relationships():
         assert len(records) == 1
         # ATT&CK Taxonomy_Mappings are not yielded: IMPLEMENTS is written by
         # load_attck.py (revoked-by remap + roll-up), never by load_capec.py.
-        ap, weakness_edges, child_of_edges = records[0]
+        ap, weakness_edges, child_of_edges, consequences = records[0]
 
         assert ap["capecId"] == "CAPEC-85"
         assert weakness_edges == [{"cweId": "CWE-79", "capecId": "CAPEC-85"}]
         assert child_of_edges == [{"childCapecId": "CAPEC-85", "parentCapecId": "CAPEC-580"}]
+        assert consequences == []
     finally:
         if xml_path.exists():
             xml_path.unlink()
@@ -139,3 +140,118 @@ def test_capec_run_reports_each_edge_type_separately(tmp_path, caplog):
         "2 AttackPattern nodes, 2 DEMONSTRATED_BY edges, 1 CHILD_OF edges created "
         "(1 deprecated nodes included)"
     ) in caplog.text
+
+
+# ---------------------------------------------------------------------------
+# spec 1.1.0: AttackPattern properties + Consequence sub-nodes
+# ---------------------------------------------------------------------------
+
+_AP_66 = """
+    <Attack_Pattern ID="66" Name="SQL Injection" Abstraction="Standard" Status="Draft">
+      <Description>SQLi.</Description>
+      <Likelihood_Of_Attack>High</Likelihood_Of_Attack>
+      <Typical_Severity>Very High</Typical_Severity>
+      <Consequences>
+        <Consequence>
+          <Scope>Confidentiality</Scope><Scope>Integrity</Scope><Scope>Availability</Scope>
+          <Impact>Execute Unauthorized Commands</Impact>
+          <Note>Run arbitrary <xhtml:b>SQL</xhtml:b>.</Note>
+        </Consequence>
+        <Consequence>
+          <Scope>Confidentiality</Scope>
+          <Impact>Read Data</Impact>
+        </Consequence>
+        <Consequence>
+          <Scope>Access Control</Scope>
+          <Likelihood>High</Likelihood>
+        </Consequence>
+      </Consequences>
+    </Attack_Pattern>"""
+
+_AP_7 = """
+    <Attack_Pattern ID="7" Name="Blind SQL Injection" Abstraction="Detailed" Status="Deprecated"/>"""
+
+
+def _capec_catalog(raw, *patterns):
+    capec_dir = raw / "CAPEC"
+    capec_dir.mkdir(parents=True, exist_ok=True)
+    path = capec_dir / "capec_latest.xml"
+    path.write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<Attack_Pattern_Catalog xmlns="http://capec.mitre.org/capec-3" '
+        'xmlns:xhtml="http://www.w3.org/1999/xhtml" Name="CAPEC" Version="3.9" Date="2023-01-24">'
+        f'<Attack_Patterns>{"".join(patterns)}</Attack_Patterns></Attack_Pattern_Catalog>',
+        encoding="utf-8",
+    )
+    return path
+
+
+def test_attack_pattern_declared_properties(tmp_path):
+    records = list(_iter_capec_records(_capec_catalog(tmp_path, _AP_66, _AP_7)))
+    assert [r[0] for r in records] == [
+        {"capecId": "CAPEC-66", "name": "SQL Injection", "status": "Draft",
+         "abstraction": "Standard", "attackLikelihood": "High",
+         "typicalSeverity": "Very High"},           # verbatim XSD value
+        {"capecId": "CAPEC-7", "name": "Blind SQL Injection", "status": "Deprecated",
+         "abstraction": "Detailed", "attackLikelihood": None, "typicalSeverity": None},
+    ]
+
+
+def test_capec_consequences_grouped_with_optional_impact(tmp_path):
+    _, _, _, consequences = list(_iter_capec_records(_capec_catalog(tmp_path, _AP_66)))[0]
+    assert consequences == [
+        {"parentId": "CAPEC-66", "consequenceId": "CAPEC-66-C1",
+         "scopes": ["Confidentiality", "Integrity", "Availability"],
+         "impacts": ["Execute Unauthorized Commands"],
+         "likelihood": None, "note": "Run arbitrary SQL."},
+        {"parentId": "CAPEC-66", "consequenceId": "CAPEC-66-C2",
+         "scopes": ["Confidentiality"], "impacts": ["Read Data"],
+         "likelihood": None, "note": None},
+        {"parentId": "CAPEC-66", "consequenceId": "CAPEC-66-C3",
+         "scopes": ["Access Control"], "impacts": None,   # CAPEC Impact is minOccurs=0
+         "likelihood": "High", "note": None},
+    ]
+
+
+def test_capec_load_is_idempotent_and_prunes(tmp_path, graph_sim):
+    from etl.load_capec import CAPECLoader
+
+    raw = tmp_path / "raw"
+    _capec_catalog(raw, _AP_66, _AP_7)
+    first = CAPECLoader(str(raw), graph_sim, batch_size=1).run()
+    snapshot = ({k: dict(v) for k, v in graph_sim.nodes.items()}, set(graph_sim.edges))
+    second = CAPECLoader(str(raw), graph_sim, batch_size=1).run()
+
+    assert first["success"] and second["success"]
+    assert first["stats"]["consequence_nodes_created"] == 3
+    assert first["stats"]["has_consequence_created"] == 3
+    assert first["stats"]["consequence_out_of_vocabulary"] == 0
+    assert second["stats"]["nodes_created"] == 0
+    assert second["stats"]["consequence_nodes_created"] == 0
+    assert second["stats"]["has_consequence_created"] == 0
+    assert (graph_sim.nodes, graph_sim.edges) == snapshot
+    assert "impacts" not in graph_sim.consequences()["CAPEC-66-C3"]
+
+    # MITRE drops the third record and the severity in a later release.
+    newer = _AP_66.replace(
+        "<Consequence>\n          <Scope>Access Control</Scope>\n"
+        "          <Likelihood>High</Likelihood>\n        </Consequence>", ""
+    ).replace("<Typical_Severity>Very High</Typical_Severity>", "")
+    assert newer.count("<Consequence>") == 2
+    _capec_catalog(raw, newer, _AP_7)
+    third = CAPECLoader(str(raw), graph_sim, batch_size=1).run()
+    assert third["stats"]["consequence_nodes_pruned"] == 1
+    assert set(graph_sim.consequences()) == {"CAPEC-66-C1", "CAPEC-66-C2"}
+    assert "typicalSeverity" not in graph_sim.nodes[("AttackPattern", "CAPEC-66")]
+
+
+def test_cwe_impact_in_capec_record_is_reported(tmp_path, caplog, fake_writer):
+    from etl.load_capec import CAPECLoader
+
+    raw = tmp_path / "raw"
+    _capec_catalog(raw, _AP_66.replace("<Impact>Read Data</Impact>",
+                                       "<Impact>Read Application Data</Impact>"))
+    with caplog.at_level("WARNING"):
+        result = CAPECLoader(str(raw), fake_writer, batch_size=100).run()
+    assert result["stats"]["consequence_out_of_vocabulary"] == 1
+    assert "CAPEC-66-C2 impact 'Read Application Data'" in caplog.text

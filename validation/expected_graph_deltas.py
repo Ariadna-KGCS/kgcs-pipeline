@@ -178,7 +178,7 @@ def read_capec(raw: Path, weakness_ids: Set[str], batch_size: int) -> Dict:
         child_loaded.update(c for c in buf_child if c[0] in patterns and c[1] in patterns)
         buf_child.clear()
 
-    for ap, edges, children in _iter_capec_records(xml_path):
+    for ap, edges, children, _ in _iter_capec_records(xml_path):
         pairs = [(c["childCapecId"], c["parentCapecId"]) for c in children]
         demonstrated.update((e["cweId"], e["capecId"]) for e in edges)
         child_all.update(pairs)

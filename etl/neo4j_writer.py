@@ -95,11 +95,13 @@ class Neo4jWriter:
                 "success":       bool,
                 "nodes_created": int,
                 "rels_created":  int,
+                "nodes_deleted": int,
                 "errors":        List[str],
             }
         """
         nodes_created = 0
         rels_created = 0
+        nodes_deleted = 0
         errors: List[str] = []
 
         if not params_list:
@@ -107,6 +109,7 @@ class Neo4jWriter:
                 "success": True,
                 "nodes_created": 0,
                 "rels_created": 0,
+                "nodes_deleted": 0,
                 "errors": [],
             }
 
@@ -123,6 +126,7 @@ class Neo4jWriter:
                     )
                 nodes_created += summary.counters.nodes_created
                 rels_created += summary.counters.relationships_created
+                nodes_deleted += summary.counters.nodes_deleted
                 logger.debug(
                     f"Batch {batch_num}: nodes={summary.counters.nodes_created} "
                     f"rels={summary.counters.relationships_created}"
@@ -140,6 +144,7 @@ class Neo4jWriter:
             "success": len(errors) == 0,
             "nodes_created": nodes_created,
             "rels_created": rels_created,
+            "nodes_deleted": nodes_deleted,
             "errors": errors,
         }
 
@@ -195,3 +200,11 @@ class Neo4jWriter:
         except Exception as exc:
             logger.error(f"read_one failed: {exc}")
             return None
+
+    def read_rows(self, cypher: str, params: Dict | None = None) -> List[Dict]:
+        """Execute a read query and return every record as a dict (read session)."""
+        params = params or {}
+        with self._driver.session(
+            database=self._database, default_access_mode="READ"
+        ) as session:
+            return [record.data() for record in session.run(cypher, params)]

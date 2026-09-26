@@ -25,6 +25,75 @@ def fake_writer() -> FakeWriter:
     return FakeWriter()
 
 
+class GraphSim:
+    """In-memory MERGE / SET / prune semantics of the Weakness, AttackPattern
+    and Consequence statements (SET x = null removes x, as in Neo4j).
+    Any other statement is recorded and ignored."""
+
+    _PARENTS = {"Weakness": "cweId", "AttackPattern": "capecId"}
+
+    def __init__(self) -> None:
+        self.nodes: Dict[tuple, Dict] = {}     # (label, key) -> properties
+        self.edges: set = set()                # (parent key, consequenceId)
+        self.other: List[str] = []
+
+    @staticmethod
+    def _set(props: Dict, row: Dict, skip=("parentId",)) -> None:
+        for field, value in row.items():
+            if field in skip:
+                continue
+            if value is None:
+                props.pop(field, None)
+            else:
+                props[field] = value
+
+    def execute_batch(self, cypher: str, params_list: List[Dict], batch_size: int = 1000):
+        created = rels = deleted = 0
+        parent = "Weakness" if ":Weakness" in cypher else "AttackPattern"
+        key = self._PARENTS[parent]
+        if f"MERGE (w:{parent}" in cypher or f"MERGE (ap:{parent}" in cypher:
+            for row in params_list:
+                node = (parent, row[key])
+                if node not in self.nodes:
+                    self.nodes[node] = {}
+                    created += 1
+                self._set(self.nodes[node], row)
+        elif "MERGE (c:Consequence" in cypher:
+            for row in params_list:
+                if (parent, row["parentId"]) not in self.nodes:
+                    continue                    # MATCH on the parent found nothing
+                node = ("Consequence", row["consequenceId"])
+                if node not in self.nodes:
+                    self.nodes[node] = {}
+                    created += 1
+                self._set(self.nodes[node], row)
+                edge = (row["parentId"], row["consequenceId"])
+                if edge not in self.edges:
+                    self.edges.add(edge)
+                    rels += 1
+        elif "DETACH DELETE c" in cypher:
+            for row in params_list:
+                for edge in sorted(self.edges):
+                    pid, cid = edge
+                    if pid == row["parentId"] and cid.startswith(pid + "-C") \
+                            and int(cid.split("-C")[-1]) > row["count"]:
+                        self.edges.discard(edge)
+                        del self.nodes[("Consequence", cid)]
+                        deleted += 1
+        else:
+            self.other.append(cypher)
+        return {"success": True, "nodes_created": created, "rels_created": rels,
+                "nodes_deleted": deleted, "errors": []}
+
+    def consequences(self) -> Dict[str, Dict]:
+        return {k: v for (label, k), v in self.nodes.items() if label == "Consequence"}
+
+
+@pytest.fixture
+def graph_sim() -> GraphSim:
+    return GraphSim()
+
+
 # ---------------------------------------------------------------------------
 # Minimal STIX builders
 # ---------------------------------------------------------------------------

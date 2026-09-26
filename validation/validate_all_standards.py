@@ -7,6 +7,8 @@ Usage:
 Options:
     --standard NAME     Validate only a specific standard (cpe, cve, attck, ...)
     --post-load         Run Cypher post-load integrity checks against Neo4j
+    --partial-load      With --post-load: the graph is a partial load (--step);
+                        0 BuildMetadata nodes is a warning instead of a failure
     --shapes-dir PATH   SHACL shape files directory (default: spec/shapes/)
     --owl-dir PATH      OWL ontology files directory (default: spec/ontology/)
     --log-level LEVEL   Logging level (default: INFO)
@@ -14,6 +16,16 @@ Options:
 Exit codes:
     0  All checks passed.
     1  One or more violations found.
+
+BuildMetadata rule (spec 1.1.0, build.shacl.ttl): a full load writes exactly
+one BuildMetadata node (run_all_etl.py step build_metadata).
+    0 nodes   FAIL; known causes: a graph loaded by a pipeline older than
+              spec 1.1, or a partial load (--step). With --partial-load it
+              is a WARNING and the report says why.
+    1 node    PASS
+    >1 nodes  FAIL always, with or without --partial-load.
+Q7 and any pre-release validation run WITHOUT --partial-load; the flag
+exists only for development and partial loads.
 
 Requires:
     pip install pyshacl   (for SHACL validation)
@@ -26,6 +38,12 @@ import os
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
+
+_REPO = Path(__file__).resolve().parent.parent
+if str(_REPO) not in sys.path:
+    sys.path.insert(0, str(_REPO))
+
+from etl.consequences import CAPEC_IMPACTS, CWE_IMPACTS, LIKELIHOODS, SCOPES  # noqa: E402
 
 logger = logging.getLogger("validate_all_standards")
 
@@ -53,8 +71,9 @@ _STANDARD_NAMES = list(_STANDARD_SHAPE_MAP.keys())
 # ---------------------------------------------------------------------------
 # Post-load Cypher checks
 # ---------------------------------------------------------------------------
-# Each tuple: (label, cypher, description)
+# Each tuple: (label, cypher, description[, params])
 # A check PASSES if COUNT returns 0.
+
 
 _POST_LOAD_CHECKS: List[Tuple[str, str, str]] = [
     (
@@ -146,7 +165,82 @@ _POST_LOAD_CHECKS: List[Tuple[str, str, str]] = [
         "RETURN count(r) AS n",
         "No shortcut edges CWE→ATT&CK (chain must pass through CAPEC)",
     ),
+    # --- spec 1.1.0: CWE enrichment (cwe.shacl.ttl v1.1 minCount 1 fields) ---
+    (
+        "weakness_required_enrichment",
+        "MATCH (w:Weakness) "
+        "WHERE coalesce(w.description, '') = '' OR w.mappingUsage IS NULL "
+        "   OR w.structure IS NULL OR w.status IS NULL "
+        "RETURN count(w) AS n",
+        "Every Weakness has description, mappingUsage, structure and status "
+        "(spec 1.1.0 cwe-enrichment; negative case weakness-missing-description)",
+    ),
+    # --- spec 1.1.0: Consequence sub-nodes (consequences-to-owl-v1.0.md) ---
+    (
+        "consequence_one_parent",
+        "MATCH (c:Consequence) "
+        "WHERE size([(p)-[:HAS_CONSEQUENCE]->(c) WHERE p:Weakness OR p:AttackPattern | 1]) <> 1 "
+        "RETURN count(c) AS n",
+        "Every Consequence has exactly one HAS_CONSEQUENCE parent (Weakness or AttackPattern)",
+    ),
+    (
+        "consequence_is_leaf",
+        "MATCH (c:Consequence)-[r]-() "
+        "WHERE NOT (type(r) = 'HAS_CONSEQUENCE' AND endNode(r) = c) "
+        "RETURN count(DISTINCT r) AS n",
+        "Consequence nodes are leaf annotations: no edge other than the incoming HAS_CONSEQUENCE",
+    ),
+    (
+        "consequence_key_matches_parent",
+        "MATCH (p)-[:HAS_CONSEQUENCE]->(c:Consequence) "
+        "WHERE NOT c.consequenceId STARTS WITH coalesce(p.cweId, p.capecId) + '-C' "
+        "RETURN count(c) AS n",
+        "consequenceId is <parentId>-C<ordinal> of its own parent",
+    ),
+    (
+        "consequence_ordinals_contiguous",
+        "MATCH (p)-[:HAS_CONSEQUENCE]->(c:Consequence) "
+        "WITH p, count(c) AS n, max(toInteger(split(c.consequenceId, '-C')[-1])) AS top "
+        "WHERE top <> n "
+        "RETURN count(p) AS n",
+        "Consequence ordinals are C1..Cn per parent (no gaps after pruning)",
+    ),
+    (
+        "consequence_scopes_present",
+        "MATCH (c:Consequence) WHERE c.scopes IS NULL OR size(c.scopes) = 0 "
+        "RETURN count(c) AS n",
+        "Every Consequence has at least one scope",
+    ),
+    (
+        "cwe_consequence_impacts_present",
+        "MATCH (:Weakness)-[:HAS_CONSEQUENCE]->(c:Consequence) "
+        "WHERE c.impacts IS NULL OR size(c.impacts) = 0 "
+        "RETURN count(c) AS n",
+        "Every CWE Consequence has at least one impact (CWE XSD; CAPEC impacts are optional)",
+    ),
+    (
+        "cwe_consequence_vocabulary",
+        "MATCH (:Weakness)-[:HAS_CONSEQUENCE]->(c:Consequence) "
+        "WHERE any(s IN coalesce(c.scopes, []) WHERE NOT s IN $scopes) "
+        "   OR any(i IN coalesce(c.impacts, []) WHERE NOT i IN $impacts) "
+        "   OR (c.likelihood IS NOT NULL AND NOT c.likelihood IN $likelihoods) "
+        "RETURN count(c) AS n",
+        "CWE Consequence scopes / impacts / likelihood within the CWE vocabularies",
+        {"scopes": list(SCOPES), "impacts": list(CWE_IMPACTS), "likelihoods": list(LIKELIHOODS)},
+    ),
+    (
+        "capec_consequence_vocabulary",
+        "MATCH (:AttackPattern)-[:HAS_CONSEQUENCE]->(c:Consequence) "
+        "WHERE any(s IN coalesce(c.scopes, []) WHERE NOT s IN $scopes) "
+        "   OR any(i IN coalesce(c.impacts, []) WHERE NOT i IN $impacts) "
+        "   OR (c.likelihood IS NOT NULL AND NOT c.likelihood IN $likelihoods) "
+        "RETURN count(c) AS n",
+        "CAPEC Consequence scopes / impacts / likelihood within the CAPEC vocabularies",
+        {"scopes": list(SCOPES), "impacts": list(CAPEC_IMPACTS), "likelihoods": list(LIKELIHOODS)},
+    ),
 ]
+
+_BUILD_METADATA_COUNT = "MATCH (b:BuildMetadata) RETURN count(b) AS n"
 
 
 # ---------------------------------------------------------------------------
@@ -259,7 +353,36 @@ def _check_constraints_present(writer) -> Tuple[bool, List[str]]:
     return True, []
 
 
-def _run_post_load_checks() -> Tuple[bool, List[str]]:
+def _check_build_metadata(writer, partial_load: bool) -> Tuple[bool, List[str], List[str]]:
+    """build_metadata_singleton (rule in the module docstring).
+
+    Returns (passed, [failure_messages], [warning_messages]).
+    """
+    name = "build_metadata_singleton"
+    count = writer.read_one(_BUILD_METADATA_COUNT)
+    if count is None:
+        return False, [f"FAIL [{name}]: BuildMetadata count query returned no result"], []
+    if count == 1:
+        return True, [], []
+    if count > 1:
+        return False, [
+            f"FAIL [{name}]: {count} BuildMetadata nodes; a graph has exactly one "
+            f"(this fails with or without --partial-load)"
+        ], []
+    if partial_load:
+        return True, [], [
+            f"WARN [{name}]: no BuildMetadata node; accepted because --partial-load "
+            f"was given (a --step load does not run the build_metadata step). "
+            f"Q7 and pre-release validation must run without --partial-load."
+        ]
+    return False, [
+        f"FAIL [{name}]: no BuildMetadata node. Known causes: the graph was loaded "
+        f"by a pipeline older than spec 1.1, or it is a partial load (--step; "
+        f"validate those with --partial-load)"
+    ], []
+
+
+def _run_post_load_checks(partial_load: bool = False) -> Tuple[bool, List[str]]:
     """Run all Cypher post-load integrity checks.
 
     Returns (all_passed, [failure_messages]).
@@ -284,11 +407,11 @@ def _run_post_load_checks() -> Tuple[bool, List[str]]:
                     logger.error(msg)
                 failures.extend(msgs)
             total = len(_POST_LOAD_CHECKS)
-            for idx, (check_name, cypher, description) in enumerate(
+            for idx, (check_name, cypher, description, *params) in enumerate(
                 _POST_LOAD_CHECKS, 1
             ):
                 logger.info(f"[{idx}/{total}] {check_name}: running ...")
-                count = writer.read_one(cypher)
+                count = writer.read_one(cypher, params[0] if params else None)
                 if count is None:
                     logger.warning(f"[{check_name}] Query returned None — skipping")
                     continue
@@ -301,6 +424,14 @@ def _run_post_load_checks() -> Tuple[bool, List[str]]:
                     failures.append(msg)
                 else:
                     logger.info(f"PASS [{check_name}]: {description}")
+            ok, msgs, warnings = _check_build_metadata(writer, partial_load)
+            for msg in warnings:
+                logger.warning(msg)
+            for msg in msgs:
+                logger.error(msg)
+            failures.extend(msgs)
+            if ok and not warnings:
+                logger.info("PASS [build_metadata_singleton]: exactly one BuildMetadata node")
     except Exception as exc:
         failures.append(f"Neo4j connection error: {exc}")
 
@@ -324,6 +455,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--post-load", action="store_true",
         help="Also run Cypher post-load integrity checks against Neo4j",
+    )
+    parser.add_argument(
+        "--partial-load", action="store_true",
+        help="Partial load (--step): 0 BuildMetadata nodes is a warning, not a "
+             "failure. Never for Q7 / pre-release validation.",
     )
     parser.add_argument(
         "--shapes-dir", default="spec/shapes",
@@ -410,7 +546,7 @@ def main() -> int:
     # --- Post-load Cypher checks ---
     if args.post_load:
         logger.info("Running post-load Cypher integrity checks ...")
-        passed, failures = _run_post_load_checks()
+        passed, failures = _run_post_load_checks(partial_load=args.partial_load)
         if not passed:
             all_violations.extend(failures)
             overall_pass = False

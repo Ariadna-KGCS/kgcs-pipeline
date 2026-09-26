@@ -5,18 +5,43 @@ Step 4 of the KGCS load order. Must run after load_cve (CAUSED_BY
 targets Vulnerability nodes created there).
 
 Node types created:
-  - Weakness  (cweId unique key, e.g. "CWE-79")
+  - Weakness     (cweId unique key, e.g. "CWE-79")
+  - Consequence  (consequenceId unique key, e.g. "CWE-79-C1"; ADR-0001)
 
 Relationships created:
   - (Vulnerability)-[:CAUSED_BY]->(Weakness)
+  - (Weakness)-[:HAS_CONSEQUENCE]->(Consequence)
 
 Data sources (already downloaded):
   - data/raw/CWE/cwec_v*.xml        (Weakness node definitions; newest version wins)
   - data/raw/CVE/nvdcve-2.0-*.json  (re-read for weaknesses[] array)
 
 XML streaming:
-  iterparse() is used so the full 30 MB XML is never held in memory
-  as a DOM tree.  Only Weakness element start events are captured.
+  iterparse() "end" events: each Weakness is transformed once its subtree
+  is complete, then cleared, so the catalog is never held as a DOM tree.
+
+Weakness enrichment (spec 1.1.0, cwe-enrichment-to-owl-v1.0.md):
+  description, extendedDescription, mappingUsage, mappingReasons,
+  structure, status, alternateTerms, likelihoodOfExploit, functionalAreas,
+  affectedResources, modesOfIntroduction, ordinalities. Values are verbatim
+  XSD enum strings; multi-valued fields are string arrays deduplicated in
+  document order. Every property is SET on create and on match; an absent
+  value is sent as null, which removes a value a newer catalog dropped.
+  Description (xs:string) goes through the SAME function as
+  Extended_Description, consequences.flatten_text (mapping rule 1:
+  itertext(), collapse consecutive whitespace, strip): the XML wraps it with
+  newline + tab indentation. On CWE 4.20 it changes 101 of 969
+  descriptions: 100 with a newline, tab or double space, plus CWE-352
+  (trailing space only). Extending rule 1 to Description is a spec note for
+  the next kgcs-spec release. Deprecated / Obsolete entries are loaded with
+  their status.
+
+Consequence sub-nodes (ADR-0001, consequences-to-owl-v1.0.md):
+  one node per Common_Consequences/Consequence record, key
+  <cweId>-C<ordinal>; scopes / impacts stay grouped per record. After the
+  write, each Weakness's Consequence nodes with an ordinal above its current
+  record count are deleted (MERGE alone never removes a record MITRE
+  deleted). Written after every Weakness node exists; leaf annotations only.
 
 CAUSED_BY coverage note:
   Many CVE records use NVD placeholder IDs ("NVD-CWE-Other",
@@ -51,6 +76,14 @@ from pathlib import Path
 from typing import Any, Dict, Generator, Iterable, List, Optional, Set, Tuple
 
 from .base import AbstractETL
+from .consequences import (
+    CWE_IMPACTS,
+    consequence_records,
+    flatten_text,
+    out_of_vocabulary,
+    unique_attrs,
+    unique_texts,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -69,12 +102,45 @@ _DECLARED_ADP_SOURCES = frozenset({
 # Cypher statements
 # ---------------------------------------------------------------------------
 
+# SET after MERGE applies on create and on match (enrichment rule 7); a null
+# value removes the property.
 _CYPHER_WEAKNESS = """\
 UNWIND $batch AS row
 MERGE (w:Weakness {cweId: row.cweId})
-ON CREATE SET
-    w.name        = row.name,
-    w.abstraction = row.abstraction
+SET w.name                = row.name,
+    w.abstraction         = row.abstraction,
+    w.description         = row.description,
+    w.extendedDescription = row.extendedDescription,
+    w.mappingUsage        = row.mappingUsage,
+    w.mappingReasons      = row.mappingReasons,
+    w.structure           = row.structure,
+    w.status              = row.status,
+    w.alternateTerms      = row.alternateTerms,
+    w.likelihoodOfExploit = row.likelihoodOfExploit,
+    w.functionalAreas     = row.functionalAreas,
+    w.affectedResources   = row.affectedResources,
+    w.modesOfIntroduction = row.modesOfIntroduction,
+    w.ordinalities        = row.ordinalities
+"""
+
+_CYPHER_CONSEQUENCE = """\
+UNWIND $batch AS row
+MATCH (w:Weakness {cweId: row.parentId})
+MERGE (c:Consequence {consequenceId: row.consequenceId})
+SET c.scopes     = row.scopes,
+    c.impacts    = row.impacts,
+    c.likelihood = row.likelihood,
+    c.note       = row.note
+MERGE (w)-[:HAS_CONSEQUENCE]->(c)
+"""
+
+# Rows: {parentId, count} for every Weakness of the catalog (count 0 prunes all).
+_CYPHER_PRUNE_CONSEQUENCES = """\
+UNWIND $batch AS row
+MATCH (:Weakness {cweId: row.parentId})-[:HAS_CONSEQUENCE]->(c:Consequence)
+WHERE c.consequenceId STARTS WITH row.parentId + '-C'
+  AND toInteger(split(c.consequenceId, '-C')[-1]) > row.count
+DETACH DELETE c
 """
 
 _CYPHER_CAUSED_BY = """\
@@ -92,24 +158,82 @@ SET r.sources     = row.sources,
 # XML extraction helpers
 # ---------------------------------------------------------------------------
 
-def _iter_weakness_nodes(xml_path: Path) -> Generator[Dict, None, None]:
-    """Stream Weakness elements from the CWE XML using iterparse."""
-    ns_weakness = f"{{{_CWE_NS}}}Weakness"
+def _weakness_record(elem: ET.Element) -> Tuple[Dict, List[Dict]]:
+    """Transform one complete Weakness element into (node row, consequence rows)."""
+    ns = f"{{{_CWE_NS}}}"
+    cwe_id = f"CWE-{elem.get('ID', '')}"
+    mapping_notes = elem.find(f"{ns}Mapping_Notes")
+    usage = mapping_notes.findtext(f"{ns}Usage") if mapping_notes is not None else None
+    node = {
+        "cweId":               cwe_id,
+        "name":                elem.get("Name", ""),
+        "abstraction":         elem.get("Abstraction", ""),
+        "description":         flatten_text(elem.find(f"{ns}Description")),
+        "extendedDescription": flatten_text(elem.find(f"{ns}Extended_Description")),
+        "mappingUsage":        (usage or "").strip() or None,
+        "mappingReasons":      unique_attrs(
+            elem.findall(f"{ns}Mapping_Notes/{ns}Reasons/{ns}Reason"), "Type"
+        ) or None,
+        "structure":           elem.get("Structure") or None,
+        "status":              elem.get("Status") or None,
+        "alternateTerms":      unique_texts(
+            elem.findall(f"{ns}Alternate_Terms/{ns}Alternate_Term/{ns}Term")
+        ) or None,
+        "likelihoodOfExploit": (elem.findtext(f"{ns}Likelihood_Of_Exploit") or "").strip() or None,
+        "functionalAreas":     unique_texts(
+            elem.findall(f"{ns}Functional_Areas/{ns}Functional_Area")
+        ) or None,
+        "affectedResources":   unique_texts(
+            elem.findall(f"{ns}Affected_Resources/{ns}Affected_Resource")
+        ) or None,
+        "modesOfIntroduction": unique_texts(
+            elem.findall(f"{ns}Modes_Of_Introduction/{ns}Introduction/{ns}Phase")
+        ) or None,
+        "ordinalities":        unique_texts(
+            elem.findall(f"{ns}Weakness_Ordinalities/{ns}Weakness_Ordinality/{ns}Ordinality")
+        ) or None,
+    }
+    consequences = consequence_records(
+        cwe_id, elem.findall(f"{ns}Common_Consequences/{ns}Consequence"), ns
+    )
+    return node, consequences
+
+
+def _iter_weakness_records(
+    xml_path: Path,
+) -> Generator[Tuple[Dict, List[Dict]], None, None]:
+    """Stream (node row, consequence rows) per Weakness of the CWE XML."""
+    ns = f"{{{_CWE_NS}}}"
+    tag_weakness = f"{ns}Weakness"
+    # Top-level entries are released after use; Categories / Views are not loaded.
+    releasable = {tag_weakness, f"{ns}Category", f"{ns}View", f"{ns}External_Reference"}
     try:
-        context = ET.iterparse(str(xml_path), events=("start",))
-        for event, elem in context:
-            if elem.tag == ns_weakness:
-                cwe_id_raw = elem.get("ID", "")
-                if not cwe_id_raw:
-                    continue
-                yield {
-                    "cweId":       f"CWE-{cwe_id_raw}",
-                    "name":        elem.get("Name", ""),
-                    "abstraction": elem.get("Abstraction", ""),
-                }
+        for _, elem in ET.iterparse(str(xml_path), events=("end",)):
+            if elem.tag == tag_weakness and elem.get("ID"):
+                yield _weakness_record(elem)
+            if elem.tag in releasable:
                 elem.clear()   # release memory
     except Exception as exc:
         logger.error(f"[CWE] Failed parsing {xml_path}: {exc}")
+
+
+def _iter_weakness_nodes(xml_path: Path) -> Generator[Dict, None, None]:
+    """Stream the Weakness node rows only."""
+    for node, _ in _iter_weakness_records(xml_path):
+        yield node
+
+
+def _cwe_version_key(p: Path) -> Tuple[int, ...]:
+    m = re.search(r"cwec_v([\d.]+)\.xml$", p.name)
+    if not m:
+        return (0,)
+    return tuple(int(x) for x in m.group(1).split(".") if x.isdigit())
+
+
+def select_cwe_xml(cwe_dir: Path) -> Optional[Path]:
+    """Newest cwec_v*.xml by numeric version (lexicographic ranks v4.9 above v4.10)."""
+    candidates = sorted(cwe_dir.glob("cwec_v*.xml"), key=_cwe_version_key)
+    return candidates[-1] if candidates else None
 
 
 # ---------------------------------------------------------------------------
@@ -271,6 +395,36 @@ class CWELoader(AbstractETL):
     def load_relationships(self, records: List[Dict]) -> Dict[str, Any]:
         return self._empty_result()
 
+    def _write_consequences(
+        self, rows: List[Dict], prune_rows: List[Dict]
+    ) -> Dict[str, Any]:
+        """Write Consequence nodes + HAS_CONSEQUENCE, then prune stale ordinals."""
+        bad = out_of_vocabulary(rows, CWE_IMPACTS)
+        if bad:
+            self.log_warning(
+                f"{len(bad)} consequence values outside the CWE vocabularies "
+                f"(loaded verbatim, SHACL flags them): {'; '.join(bad[:10])}"
+            )
+        written = self.writer.execute_batch(_CYPHER_CONSEQUENCE, rows, self.batch_size)
+        pruned = self.writer.execute_batch(
+            _CYPHER_PRUNE_CONSEQUENCES, prune_rows, self.batch_size
+        )
+        stats = {
+            "consequence_records":           len(rows),
+            "consequence_nodes_created":     written.get("nodes_created", 0),
+            "has_consequence_created":       written.get("rels_created", 0),
+            "consequence_nodes_pruned":      pruned.get("nodes_deleted", 0),
+            "consequence_out_of_vocabulary": len(bad),
+            "errors": written.get("errors", []) + pruned.get("errors", []),
+        }
+        self.log_success(
+            f"Consequence: {len(rows)} records written "
+            f"({stats['consequence_nodes_created']} nodes, "
+            f"{stats['has_consequence_created']} HAS_CONSEQUENCE created, "
+            f"{stats['consequence_nodes_pruned']} stale nodes pruned)"
+        )
+        return stats
+
     def run(self) -> Dict[str, Any]:
         result: Dict[str, Any] = {
             "success": False,
@@ -289,23 +443,13 @@ class CWELoader(AbstractETL):
 
             # --- Step 1: Weakness nodes from XML ---
             # The downloader keeps the upstream versioned filename
-            # (cwec_v4.19.1.xml, cwec_v4.20.xml, ...), so glob and pick the
-            # highest version numerically — lexicographic sort would rank
-            # v4.9 above v4.10.
+            # (cwec_v4.19.1.xml, cwec_v4.20.xml, ...): newest version wins.
             cwe_dir = self.raw_data_dir / "CWE"
-
-            def _cwe_version_key(p: Path) -> Tuple[int, ...]:
-                m = re.search(r"cwec_v([\d.]+)\.xml$", p.name)
-                if not m:
-                    return (0,)
-                return tuple(int(x) for x in m.group(1).split(".") if x.isdigit())
-
-            candidates = sorted(cwe_dir.glob("cwec_v*.xml"), key=_cwe_version_key)
-            if not candidates:
+            xml_path = select_cwe_xml(cwe_dir)
+            if xml_path is None:
                 self.log_error(f"CWE XML not found: no cwec_v*.xml in {cwe_dir}")
                 result["errors"].append(f"Missing: cwec_v*.xml in {cwe_dir}")
                 return result
-            xml_path = candidates[-1]
             self.log_success(f"CWE XML selected: {xml_path.name}")
 
             nodes_created = 0
@@ -313,9 +457,15 @@ class CWELoader(AbstractETL):
             batch: List[Dict] = []
             loaded_cwe_ids: set = set()
 
-            for rec in _iter_weakness_nodes(xml_path):
+            # Consequence rows wait until every Weakness exists (~1.2k rows).
+            consequence_rows: List[Dict] = []
+            prune_rows: List[Dict] = []
+
+            for rec, consequences in _iter_weakness_records(xml_path):
                 loaded_cwe_ids.add(rec["cweId"])
                 batch.append(rec)
+                consequence_rows.extend(consequences)
+                prune_rows.append({"parentId": rec["cweId"], "count": len(consequences)})
                 if len(batch) >= self.batch_size:
                     r = self.writer.execute_batch(
                         _CYPHER_WEAKNESS, batch, self.batch_size
@@ -332,7 +482,14 @@ class CWELoader(AbstractETL):
                 batch = []
 
             result["stats"]["nodes_created"] = nodes_created
-            self.log_success(f"Weakness nodes: {nodes_created} created")
+            self.log_success(
+                f"Weakness nodes: {len(loaded_cwe_ids)} written, {nodes_created} created"
+            )
+
+            # --- Step 1b: Consequence sub-nodes (ADR-0001) ---
+            cons = self._write_consequences(consequence_rows, prune_rows)
+            errors.extend(cons.pop("errors"))
+            result["stats"].update(cons)
 
             # --- Step 2: CAUSED_BY relationships from CVE JSON ---
             cve_dir = self.raw_data_dir / "CVE"

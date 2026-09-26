@@ -38,6 +38,8 @@ UNIQUE_CONSTRAINTS: List[tuple] = [
     ("Weakness",              "cweId"),
     # CAPEC
     ("AttackPattern",         "capecId"),
+    # CWE / CAPEC consequence sub-nodes (spec 1.1.0, ADR-0001)
+    ("Consequence",           "consequenceId"),
     # ATT&CK
     ("Technique",             "attackId"),
     ("SubTechnique",          "attackId"),

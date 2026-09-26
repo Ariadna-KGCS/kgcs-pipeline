@@ -224,3 +224,179 @@ def test_equally_new_records_keep_the_modified_lists(tmp_path: Path, fake_writer
     )
     assert len(fake_writer.rows("[r:CAUSED_BY]")) == 1
     assert result["stats"]["pairs_only_in_older"] == 0
+
+
+# ---------------------------------------------------------------------------
+# spec 1.1.0: Weakness enrichment + Consequence sub-nodes
+# ---------------------------------------------------------------------------
+
+from etl.load_cwe import _CYPHER_WEAKNESS, _iter_weakness_records  # noqa: E402
+
+_CWE79 = """
+<Weakness ID="79" Name="XSS" Abstraction="Base" Structure="Simple" Status="Stable">
+  <Description>The product does not neutralize
+\t\t\t\t\tuser input.</Description>
+  <Extended_Description>
+    <xhtml:p>Cross-site scripting.</xhtml:p>
+    <xhtml:ul><xhtml:li>Type 1</xhtml:li><xhtml:li>Type 2</xhtml:li></xhtml:ul>
+  </Extended_Description>
+  <Modes_Of_Introduction>
+    <Introduction><Phase>Implementation</Phase><Note>n1</Note></Introduction>
+    <Introduction><Phase>Architecture and Design</Phase></Introduction>
+    <Introduction><Phase>Implementation</Phase><Note>n2</Note></Introduction>
+  </Modes_Of_Introduction>
+  <Weakness_Ordinalities>
+    <Weakness_Ordinality><Ordinality>Resultant</Ordinality><Description>d</Description></Weakness_Ordinality>
+  </Weakness_Ordinalities>
+  <Alternate_Terms>
+    <Alternate_Term><Term>XSS</Term><Description>d</Description></Alternate_Term>
+    <Alternate_Term><Term>CSS</Term></Alternate_Term>
+  </Alternate_Terms>
+  <Likelihood_Of_Exploit>High</Likelihood_Of_Exploit>
+  <Functional_Areas><Functional_Area>Networking</Functional_Area></Functional_Areas>
+  <Affected_Resources><Affected_Resource>Memory</Affected_Resource></Affected_Resources>
+  <Common_Consequences>
+    <Consequence>
+      <Scope>Confidentiality</Scope><Scope>Integrity</Scope>
+      <Impact>Read Application Data</Impact><Impact>Execute Unauthorized Code or Commands</Impact>
+      <Note><xhtml:p>Cookie   theft.</xhtml:p></Note>
+    </Consequence>
+    <Consequence>
+      <Scope>Availability</Scope><Impact>DoS: Crash, Exit, or Restart</Impact>
+      <Likelihood>Low</Likelihood>
+    </Consequence>
+  </Common_Consequences>
+  <Mapping_Notes>
+    <Usage>Allowed</Usage>
+    <Reasons><Reason Type="Acceptable-Use"/><Reason Type="Abstraction"/><Reason Type="Acceptable-Use"/></Reasons>
+  </Mapping_Notes>
+</Weakness>"""
+
+_CWE79_SECOND_RECORD = """
+    <Consequence>
+      <Scope>Availability</Scope><Impact>DoS: Crash, Exit, or Restart</Impact>
+      <Likelihood>Low</Likelihood>
+    </Consequence>"""
+
+_CWE20 = """
+<Weakness ID="20" Name="Input Validation" Abstraction="Class" Structure="Simple" Status="Deprecated">
+  <Description>Deprecated entry.</Description>
+  <Mapping_Notes><Usage>Prohibited</Usage><Reasons><Reason Type="Deprecated"/></Reasons></Mapping_Notes>
+</Weakness>"""
+
+
+def _cwe_catalog(raw: Path, *weaknesses: str) -> Path:
+    cwe = raw / "CWE"
+    cwe.mkdir(parents=True, exist_ok=True)
+    path = cwe / "cwec_v4.20.xml"
+    path.write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<Weakness_Catalog Name="CWE" Version="4.20" Date="2026-04-30" '
+        'xmlns="http://cwe.mitre.org/cwe-7" xmlns:xhtml="http://www.w3.org/1999/xhtml">'
+        f'<Weaknesses>{"".join(weaknesses)}</Weaknesses>'
+        '<Categories><Category ID="16" Name="Configuration" Status="Obsolete"/></Categories>'
+        "</Weakness_Catalog>",
+        encoding="utf-8",
+    )
+    return path
+
+
+def test_weakness_enrichment_properties(tmp_path: Path):
+    records = list(_iter_weakness_records(_cwe_catalog(tmp_path, _CWE79, _CWE20)))
+    assert [n["cweId"] for n, _ in records] == ["CWE-79", "CWE-20"]   # Category not loaded
+    node, _ = records[0]
+    assert node == {
+        "cweId": "CWE-79",
+        "name": "XSS",
+        "abstraction": "Base",
+        "description": "The product does not neutralize user input.",
+        "extendedDescription": "Cross-site scripting. Type 1 Type 2",
+        "mappingUsage": "Allowed",
+        "mappingReasons": ["Acceptable-Use", "Abstraction"],
+        "structure": "Simple",
+        "status": "Stable",
+        "alternateTerms": ["XSS", "CSS"],
+        "likelihoodOfExploit": "High",
+        "functionalAreas": ["Networking"],
+        "affectedResources": ["Memory"],
+        "modesOfIntroduction": ["Implementation", "Architecture and Design"],
+        "ordinalities": ["Resultant"],
+    }
+
+
+def test_absent_optional_fields_are_null_never_empty_lists(tmp_path: Path):
+    node, consequences = list(_iter_weakness_records(_cwe_catalog(tmp_path, _CWE20)))[0]
+    assert node["status"] == "Deprecated"          # deprecated entries are loaded
+    assert node["mappingUsage"] == "Prohibited"
+    for field in ("extendedDescription", "alternateTerms", "likelihoodOfExploit",
+                  "functionalAreas", "affectedResources", "modesOfIntroduction",
+                  "ordinalities"):
+        assert node[field] is None, field
+    assert consequences == []
+
+
+def test_weakness_consequences_keep_record_grouping(tmp_path: Path):
+    _, consequences = list(_iter_weakness_records(_cwe_catalog(tmp_path, _CWE79)))[0]
+    assert consequences == [
+        {"parentId": "CWE-79", "consequenceId": "CWE-79-C1",
+         "scopes": ["Confidentiality", "Integrity"],
+         "impacts": ["Read Application Data", "Execute Unauthorized Code or Commands"],
+         "likelihood": None, "note": "Cookie theft."},
+        {"parentId": "CWE-79", "consequenceId": "CWE-79-C2",
+         "scopes": ["Availability"], "impacts": ["DoS: Crash, Exit, or Restart"],
+         "likelihood": "Low", "note": None},
+    ]
+
+
+def test_weakness_cypher_sets_on_create_and_on_match():
+    assert "ON CREATE SET" not in _CYPHER_WEAKNESS
+    assert "SET w.name" in _CYPHER_WEAKNESS
+    for prop in ("description", "extendedDescription", "mappingUsage", "mappingReasons",
+                 "structure", "status", "alternateTerms", "likelihoodOfExploit",
+                 "functionalAreas", "affectedResources", "modesOfIntroduction",
+                 "ordinalities"):
+        assert f"w.{prop}" in _CYPHER_WEAKNESS and f"row.{prop}" in _CYPHER_WEAKNESS
+
+
+def test_cwe_consequences_written_after_all_weaknesses(tmp_path: Path, fake_writer):
+    raw = tmp_path / "raw"
+    _cwe_catalog(raw, _CWE79, _CWE20)
+    result = CWELoader(str(raw), fake_writer, batch_size=1).run()
+    assert result["success"], result["errors"]
+    order = [c for c, _ in fake_writer.calls]
+    last_weakness = max(i for i, c in enumerate(order) if "MERGE (w:Weakness" in c)
+    first_consequence = min(i for i, c in enumerate(order) if "MERGE (c:Consequence" in c)
+    assert last_weakness < first_consequence
+    assert fake_writer.rows("DETACH DELETE c") == [
+        {"parentId": "CWE-79", "count": 2}, {"parentId": "CWE-20", "count": 0},
+    ]
+    assert result["stats"]["consequence_records"] == 2
+    assert result["stats"]["consequence_out_of_vocabulary"] == 0
+
+
+def test_cwe_load_is_idempotent_and_prunes_removed_records(tmp_path: Path, graph_sim):
+    raw = tmp_path / "raw"
+    _cwe_catalog(raw, _CWE79, _CWE20)
+    first = CWELoader(str(raw), graph_sim, batch_size=100).run()
+    snapshot = ({k: dict(v) for k, v in graph_sim.nodes.items()}, set(graph_sim.edges))
+    second = CWELoader(str(raw), graph_sim, batch_size=100).run()
+
+    assert first["stats"]["nodes_created"] == 2
+    assert first["stats"]["consequence_nodes_created"] == 2
+    assert first["stats"]["has_consequence_created"] == 2
+    assert second["stats"]["nodes_created"] == 0
+    assert second["stats"]["consequence_nodes_created"] == 0
+    assert second["stats"]["has_consequence_created"] == 0
+    assert (graph_sim.nodes, graph_sim.edges) == snapshot
+
+    # Newer catalog: MITRE dropped the second record and the exploit likelihood.
+    assert _CWE79_SECOND_RECORD in _CWE79
+    newer = _CWE79.replace(_CWE79_SECOND_RECORD, "").replace(
+        "<Likelihood_Of_Exploit>High</Likelihood_Of_Exploit>", ""
+    )
+    _cwe_catalog(raw, newer, _CWE20)
+    third = CWELoader(str(raw), graph_sim, batch_size=100).run()
+    assert third["stats"]["consequence_nodes_pruned"] == 1
+    assert set(graph_sim.consequences()) == {"CWE-79-C1"}
+    assert graph_sim.edges == {("CWE-79", "CWE-79-C1")}
+    assert "likelihoodOfExploit" not in graph_sim.nodes[("Weakness", "CWE-79")]
