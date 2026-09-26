@@ -31,6 +31,19 @@ Revoked/deprecated filtering:
   and counted in stats. They must not enter the graph as they contain
   stale data.
 
+PART_OF resolution (spec 1.1.0, attck-to-owl-v1.0.md):
+  A technique's kill_chain_phases entry is resolved to the tactic attackId
+  of the SAME bundle whose x_mitre_shortname equals the phase name and
+  whose kill chain equals the entry's kill_chain_name. Never by phaseName
+  alone: 11 phase names are shared across the three matrices.
+
+IMPLEMENTS (spec 1.1.0, revoked/deprecated ATT&CK targets):
+  Sources are the CAPEC XML ATT&CK Taxonomy_Mappings and the STIX capec
+  external references (today carried only by revoked/deprecated
+  techniques). Each cited ATT&CK id goes through the shared revoked-by
+  remap (attck_revocations.py) BEFORE the sub-technique -> parent roll-up;
+  deprecated targets are dropped and counted.
+
 SHACL invariants enforced here:
   SH-CORE-06: Every Technique has ≥1 PART_OF edge to a Tactic.
   SH-CORE-07: Every SubTechnique has exactly 1 SUBTECHNIQUE_OF edge.
@@ -40,8 +53,15 @@ import json
 import logging
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
+from .attck_revocations import (
+    DEPRECATED,
+    REMAPPED,
+    UNRESOLVED,
+    RevocationRemap,
+    RevocationRemapBuilder,
+)
 from .base import AbstractETL
 
 logger = logging.getLogger(__name__)
@@ -55,6 +75,13 @@ _DOMAIN_MAP = {
     "mobile":     "mobile",
 }
 _DOMAIN_PRIORITY = {"enterprise": 0, "ics": 1, "mobile": 2}
+# Kill chain carried by each bundle's techniques (x-mitre-tactic objects
+# have no kill_chain_name of their own; one kill chain per bundle).
+_KILL_CHAIN_BY_DOMAIN = {
+    "enterprise": "mitre-attack",
+    "ics":        "mitre-ics-attack",
+    "mobile":     "mitre-mobile-attack",
+}
 
 # ---------------------------------------------------------------------------
 # Cypher statements
@@ -106,7 +133,7 @@ ON MATCH SET
 _CYPHER_PART_OF = """\
 UNWIND $batch AS row
 MATCH (t:Technique {attackId: row.techniqueId})
-MATCH (ta:Tactic {phaseName: row.phaseName})
+MATCH (ta:Tactic {attackId: row.tacticId})
 MERGE (t)-[:PART_OF]->(ta)
 """
 
@@ -155,25 +182,34 @@ def _capec_ids(obj: Dict) -> List[str]:
     ]
 
 
+def _normalize_attack_id(raw_attack_id: str) -> Optional[str]:
+    """Prefix a CAPEC-cited ATT&CK id with `T` (`1574.010` -> `T1574.010`)."""
+    raw = (raw_attack_id or "").strip()
+    if not raw:
+        return None
+    return raw if raw.startswith("T") else f"T{raw}"
+
+
 def _normalize_attack_id_to_technique(raw_attack_id: str) -> Optional[str]:
     """Normalize ATT&CK IDs to top-level Technique IDs for IMPLEMENTS edges.
 
     CAPEC taxonomy mappings may point to subtechniques (for example `1574.010`).
     The current KGCS Offensive/Defensive chain operates on `Technique`, so
     subtechnique mappings are collapsed to the parent technique (`T1574`) here.
+    Apply the revoked-by remap BEFORE this roll-up.
     """
-    raw = (raw_attack_id or "").strip()
-    if not raw:
-        return None
-
-    attack_id = raw if raw.startswith("T") else f"T{raw}"
-    if "." in attack_id:
+    attack_id = _normalize_attack_id(raw_attack_id)
+    if attack_id and "." in attack_id:
         attack_id = attack_id.split(".", 1)[0]
     return attack_id
 
 
 def _capec_taxonomy_pairs(capec_xml_path: Path) -> Set[Tuple[str, str]]:
-    """Extract CAPEC -> ATT&CK Technique pairs from CAPEC XML taxonomy mappings."""
+    """Extract CAPEC -> cited ATT&CK id pairs from CAPEC XML taxonomy mappings.
+
+    The cited id is only `T`-prefixed, not rolled up: the revoked-by remap
+    must see the exact id CAPEC cites (see _resolve_implements).
+    """
     pairs: Set[Tuple[str, str]] = set()
     ap_tag = f"{{{_CAPEC_NS}}}Attack_Pattern"
     tm_tag = f"{{{_CAPEC_NS}}}Taxonomy_Mapping"
@@ -195,7 +231,7 @@ def _capec_taxonomy_pairs(capec_xml_path: Path) -> Set[Tuple[str, str]]:
                 if "ATTACK" in taxonomy_name.upper():
                     entry_id_elem = elem.find(ei_tag)
                     if entry_id_elem is not None and entry_id_elem.text:
-                        attack_id = _normalize_attack_id_to_technique(entry_id_elem.text)
+                        attack_id = _normalize_attack_id(entry_id_elem.text)
                         if attack_id:
                             pairs.add((current_capec_id, attack_id))
                 elem.clear()
@@ -226,22 +262,29 @@ def _ordered_stix_files(attck_dir: Path) -> List[Path]:
     return sorted(attck_dir.glob("*.json"), key=priority)
 
 
-def _load_stix_bundle(path: Path) -> Dict:
+def _load_stix_bundle(
+    path: Path, remap_builder: Optional[RevocationRemapBuilder] = None,
+) -> Dict:
     """Load a STIX bundle JSON, returning {stix_id: object} maps.
+
+    Every object is also fed to remap_builder (revoked ones included).
 
     Returns:
       {
-        "tactics":       {stix_id: obj},
-        "techniques":    {stix_id: obj},
-        "subtechniques": {stix_id: obj},
-        "sub_of_rels":   [{source_ref, target_ref}],
-        "skipped":       int,
-        "domain":        str,
+        "tactics":         {stix_id: obj},
+        "techniques":      {stix_id: obj},
+        "subtechniques":   {stix_id: obj},
+        "sub_of_rels":     [{source_ref, target_ref}],
+        "dead_capec_refs": [(capecId, attackId)] from revoked/deprecated
+                           attack-patterns,
+        "skipped":         int,
+        "domain":          str,
       }
     """
     result = {
         "tactics": {}, "techniques": {}, "subtechniques": {},
-        "sub_of_rels": [], "skipped": 0, "domain": _resolve_domain(path),
+        "sub_of_rels": [], "dead_capec_refs": [], "skipped": 0,
+        "domain": _resolve_domain(path),
     }
     try:
         with open(path, encoding="utf-8") as fh:
@@ -249,10 +292,18 @@ def _load_stix_bundle(path: Path) -> Dict:
         objects = bundle.get("objects", [])
         for obj in objects:
             otype = obj.get("type", "")
+            if remap_builder is not None:
+                remap_builder.add_object(obj)
 
-            # Skip revoked/deprecated
+            # Skip revoked/deprecated (their capec refs still go through the
+            # remap: the successor inherits them, deprecated ones are dropped)
             if obj.get("revoked", False) or obj.get("x_mitre_deprecated", False):
                 result["skipped"] += 1
+                if otype == "attack-pattern":
+                    attack_id = _external_id(obj, "mitre-attack")
+                    if attack_id:
+                        for capec_id in _capec_ids(obj):
+                            result["dead_capec_refs"].append((capec_id, attack_id))
                 continue
 
             if otype == "x-mitre-tactic":
@@ -280,6 +331,71 @@ def _load_stix_bundle(path: Path) -> Dict:
         logger.error(f"[ATTCK] Failed loading {path}: {exc}")
 
     return result
+
+
+def _part_of_pairs(bundle: Dict) -> Tuple[Set[Tuple[str, str]], int]:
+    """Resolve Technique -> Tactic inside one loaded bundle.
+
+    Returns ({(techniqueId, tacticId)}, unresolved kill_chain_phases count).
+    A phase resolves to the bundle's x-mitre-tactic whose x_mitre_shortname
+    equals phase_name, provided kill_chain_name is the bundle's kill chain.
+    """
+    kill_chain = _KILL_CHAIN_BY_DOMAIN.get(bundle["domain"])
+    tactic_by_phase: Dict[Tuple[str, str], str] = {}
+    for obj in bundle["tactics"].values():
+        tactic_id = _external_id(obj, "mitre-attack")
+        shortname = obj.get("x_mitre_shortname", "")
+        if kill_chain and tactic_id and shortname:
+            tactic_by_phase[(kill_chain, shortname)] = tactic_id
+
+    pairs: Set[Tuple[str, str]] = set()
+    unresolved = 0
+    for obj in bundle["techniques"].values():
+        technique_id = _external_id(obj, "mitre-attack")
+        if not technique_id:
+            continue
+        for kcp in obj.get("kill_chain_phases", []):
+            tactic_id = tactic_by_phase.get(
+                (kcp.get("kill_chain_name", ""), kcp.get("phase_name", ""))
+            )
+            if tactic_id:
+                pairs.add((technique_id, tactic_id))
+            else:
+                unresolved += 1
+    return pairs, unresolved
+
+
+def _resolve_implements(
+    refs: Iterable[Tuple[str, str]],
+    remap: RevocationRemap,
+    live_techniques: Set[str],
+) -> Tuple[Set[Tuple[str, str]], Dict[str, int]]:
+    """Turn (capecId, cited ATT&CK id) refs into IMPLEMENTS (capecId, Technique) pairs.
+
+    Order: revoked-by remap on the cited id, then sub-technique -> parent
+    roll-up. Counts are per distinct ref: rows, remapped,
+    dropped_deprecated, unresolved (id in no bundle, revoked without a
+    successor, or roll-up parent not a live Technique).
+    """
+    counts = {"rows": 0, "remapped": 0, "dropped_deprecated": 0, "unresolved": 0}
+    pairs: Set[Tuple[str, str]] = set()
+    for capec_id, cited in sorted(set(refs)):
+        counts["rows"] += 1
+        status, target = remap.resolve(cited)
+        if status == DEPRECATED:
+            counts["dropped_deprecated"] += 1
+            continue
+        if status == UNRESOLVED:
+            counts["unresolved"] += 1
+            continue
+        technique_id = _normalize_attack_id_to_technique(target)
+        if technique_id not in live_techniques:
+            counts["unresolved"] += 1
+            continue
+        if status == REMAPPED:
+            counts["remapped"] += 1
+        pairs.add((capec_id, technique_id))
+    return pairs, counts
 
 
 class ATTCKLoader(AbstractETL):
@@ -310,6 +426,11 @@ class ATTCKLoader(AbstractETL):
                 "rels_created":  0,
                 "skipped_revoked": 0,
                 "tactics": 0, "techniques": 0, "subtechniques": 0,
+                "part_of": 0, "part_of_unresolved_phases": 0,
+                "implements": 0,
+                "implements_remapped": 0,
+                "implements_dropped_deprecated": 0,
+                "implements_unresolved": 0,
             },
         }
 
@@ -345,16 +466,25 @@ class ATTCKLoader(AbstractETL):
             stix_to_attack_id: Dict[str, str]  = {}
             # De-duplicated sub-of pairs
             sub_of_pairs: Set[Tuple[str, str]] = set()
-            # IMPLEMENTS pairs
-            implements_pairs: Set[Tuple[str, str]] = set()
+            # PART_OF pairs, resolved per bundle
+            part_of_pairs: Set[Tuple[str, str]] = set()
+            part_of_unresolved = 0
+            # IMPLEMENTS refs (capecId, cited ATT&CK id) before remap/roll-up
+            implements_refs: Set[Tuple[str, str]] = set(capec_taxonomy_pairs)
+            remap_builder = RevocationRemapBuilder()
 
             total_skipped = 0
 
             for path in files:
                 logger.debug(f"[ATTCK] Processing {path.name}")
-                bundle = _load_stix_bundle(path)
+                bundle = _load_stix_bundle(path, remap_builder)
                 domain = bundle["domain"]
                 total_skipped += bundle["skipped"]
+                implements_refs.update(bundle["dead_capec_refs"])
+
+                pairs, unresolved = _part_of_pairs(bundle)
+                part_of_pairs.update(pairs)
+                part_of_unresolved += unresolved
 
                 # --- Tactics ---
                 for stix_id, obj in bundle["tactics"].items():
@@ -397,21 +527,10 @@ class ATTCKLoader(AbstractETL):
                             target[attack_id] = rec
                         # else already present; domain accumulation handled in Cypher
 
-                        # Collect IMPLEMENTS (only non-subtechniques → CAPEC)
+                        # Collect IMPLEMENTS refs (only non-subtechniques → CAPEC)
                         if not is_sub:
                             for capec_id in _capec_ids(obj):
-                                implements_pairs.add((capec_id, attack_id))
-
-                        # PART_OF from kill_chain_phases — include all MITRE domains
-                        if not is_sub:
-                            for kcp in obj.get("kill_chain_phases", []):
-                                if kcp.get("kill_chain_name", "").startswith("mitre-"):
-                                    phase_name = kcp.get("phase_name", "")
-                                    if phase_name:
-                                        # Will link via Tactic.phaseName
-                                        rec.setdefault("phases", [])
-                                        if phase_name not in rec["phases"]:
-                                            rec["phases"].append(phase_name)
+                                implements_refs.add((capec_id, attack_id))
 
                 # --- SUBTECHNIQUE_OF relationships ---
                 for rel in bundle["sub_of_rels"]:
@@ -458,9 +577,8 @@ class ATTCKLoader(AbstractETL):
 
             # --- Write PART_OF ---
             part_of_recs = [
-                {"techniqueId": attack_id, "phaseName": phase}
-                for attack_id, rec in all_techniques.items()
-                for phase in rec.get("phases", [])
+                {"techniqueId": tid, "tacticId": ta}
+                for tid, ta in sorted(part_of_pairs)
             ]
             if part_of_recs:
                 r = self.writer.execute_batch(
@@ -469,6 +587,11 @@ class ATTCKLoader(AbstractETL):
                 rels_created += r.get("rels_created", 0)
                 errors.extend(r.get("errors", []))
             self.log_success(f"PART_OF: {len(part_of_recs)} relationships written")
+            if part_of_unresolved:
+                self.log_warning(
+                    f"PART_OF: {part_of_unresolved} kill_chain_phases entries "
+                    "matched no tactic of their own bundle"
+                )
 
             # --- Write SUBTECHNIQUE_OF ---
             sub_of_recs = [
@@ -486,10 +609,24 @@ class ATTCKLoader(AbstractETL):
             )
 
             # --- Write IMPLEMENTS ---
-            implements_pairs.update(capec_taxonomy_pairs)
+            remap = remap_builder.build()
+            self.log_success(
+                f"revoked-by remap: {len(remap.successors)} revoked ids with a "
+                f"live successor, {len(remap.deprecated)} deprecated, "
+                f"{len(remap.revoked_without_successor)} revoked without successor"
+            )
+            implements_pairs, impl_counts = _resolve_implements(
+                implements_refs, remap, set(all_techniques)
+            )
+            self.log_success(
+                f"IMPLEMENTS remap: {impl_counts['rows']} CAPEC→ATT&CK refs, "
+                f"{impl_counts['remapped']} remapped via revoked-by, "
+                f"{impl_counts['dropped_deprecated']} dropped as deprecated, "
+                f"{impl_counts['unresolved']} unresolved"
+            )
             impl_recs = [
                 {"capecId": capec, "techniqueId": tid}
-                for capec, tid in implements_pairs
+                for capec, tid in sorted(implements_pairs)
             ]
             if impl_recs:
                 r = self.writer.execute_batch(
@@ -507,6 +644,12 @@ class ATTCKLoader(AbstractETL):
             result["stats"]["tactics"]         = len(tactic_recs)
             result["stats"]["techniques"]      = len(tech_recs)
             result["stats"]["subtechniques"]   = len(sub_recs)
+            result["stats"]["part_of"]         = len(part_of_recs)
+            result["stats"]["part_of_unresolved_phases"] = part_of_unresolved
+            result["stats"]["implements"]      = len(impl_recs)
+            result["stats"]["implements_remapped"] = impl_counts["remapped"]
+            result["stats"]["implements_dropped_deprecated"] = impl_counts["dropped_deprecated"]
+            result["stats"]["implements_unresolved"] = impl_counts["unresolved"]
             result["errors"]  = errors
             result["success"] = len(errors) == 0
 

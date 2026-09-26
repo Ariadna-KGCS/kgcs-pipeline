@@ -75,6 +75,8 @@ NODE_LABELS = [
     "DetectionAnalytic",
     "DeceptionTechnique",
     "EngagementConcept",
+    "Consequence",
+    "BuildMetadata",
 ]
 
 # ---------------------------------------------------------------------------
@@ -95,6 +97,7 @@ REL_TYPES = [
     "DETECTED_BY",
     "COUNTERED_BY",
     "DISRUPTS",
+    "HAS_CONSEQUENCE",
 ]
 
 # ---------------------------------------------------------------------------

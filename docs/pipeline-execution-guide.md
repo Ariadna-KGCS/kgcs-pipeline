@@ -66,13 +66,37 @@ Steps execute in this exact order. Each step requires all prior steps to have su
 | 1 | `cpe` | `CPELoader` | Platform, PlatformConfiguration; MATCHES_PLATFORM |
 | 2 | `cve` | `CVELoader` | Vulnerability, Reference; AFFECTS, REFERENCES |
 | 3 | `cvss` | `CVSSLoader` | Score; HAS_SCORE |
-| 4 | `cwe` | `CWELoader` | Weakness; CAUSED_BY |
-| 5 | `capec` | `CAPECLoader` | AttackPattern; DEMONSTRATED_BY, IMPLEMENTS |
+| 4 | `cwe` | `CWELoader` | Weakness (+ spec 1.1 enrichment), Consequence; CAUSED_BY, HAS_CONSEQUENCE |
+| 5 | `capec` | `CAPECLoader` | AttackPattern, Consequence; DEMONSTRATED_BY, CHILD_OF, HAS_CONSEQUENCE |
 | 6 | `attck` | `ATTCKLoader` | Technique, SubTechnique, Tactic; PART_OF, SUBTECHNIQUE_OF |
 | 7 | `d3fend` | `D3FENDLoader` | DefensiveTechnique; MITIGATED_BY |
 | 8 | `car` | `CARLoader` | DetectionAnalytic; DETECTED_BY |
 | 9 | `shield` | `SHIELDLoader` | DeceptionTechnique; COUNTERED_BY |
 | 10 | `engage` | `ENGAGELoader` | EngagementConcept; DISRUPTS |
+| 11 | `build_metadata` | `build_metadata.run_build_metadata()` | the single BuildMetadata node (postscript, no edges) |
+
+### Build Metadata (spec 1.1.0)
+
+The last step writes one `BuildMetadata` node: `specVersion` (`SPEC_VERSION`),
+`buildTimestamp` (UTC completion instant), `pipelineCommit` (`git rev-parse HEAD`)
+and `sourceSnapshots`, one `<SOURCE>=<snapshot>` per standard, read from the same
+raw files the loaders read. Preview it offline with `python -m etl.build_metadata`.
+
+Rule: the release when the source states one; dates or ranges only when it has none.
+
+| SOURCE | Snapshot | 2026-09-06 raw data |
+|---|---|---|
+| CWE, CAPEC | catalog `Version` attribute (the catalog `Date` is only logged) | `CWE=4.20`, `CAPEC=3.9` |
+| D3FEND | `owl:versionInfo` of `d3fend.json` | `D3FEND=1.3.0` |
+| ATTCK | the `x-mitre-collection` `x_mitre_version` if all three bundles carry the same one, else `download:<file date>;modified-max:<max modified>` | `ATTCK=download:2026-09-06;modified-max:2026-08-04` |
+| CVE, CVSS | NVD feed `timestamp` of the CVE files: one value when all files agree, else `<min>..<max>` (UTC, seconds, `Z`) | `CVE=2026-08-28T03:03:23Z..2026-09-06T08:00:03Z` |
+| CPE | same rule over the CPE and CPE-MATCH chunks together | `CPE=2026-09-05T23:40:00Z..2026-09-05T23:52:08Z` |
+| CAR, SHIELD, ENGAGE | no release in the files: `download:<file date>` | `CAR=download:2026-09-06` |
+
+The range matters: the yearly CVE feeds lag the modified feed by up to nine days,
+so the max alone would overstate freshness. "File date" is the UTC date of the
+newest file mtime; the downloader records nothing else, so a validated load keeps
+a listing of every `data/raw` file (path, size, mtime, sha256) as the evidence.
 
 ---
 
@@ -94,11 +118,29 @@ python validation/validate_all_standards.py --post-load
 
 # Skip SHACL; run post-load checks only
 python validation/validate_all_standards.py --skip-shacl --post-load
+
+# Development / partial loads (--step) only: tolerate a missing BuildMetadata node
+python validation/validate_all_standards.py --skip-shacl --post-load --partial-load
+
+# SHACL on an export of Weakness / AttackPattern / Consequence / BuildMetadata
+python validation/shacl_export_check.py                     # from NEO4J_DATABASE, read-only
+python validation/shacl_export_check.py --from-raw data/raw # loader transforms, no Neo4j
 ```
+
+**`--partial-load` rule.** A full load has exactly one `BuildMetadata` node.
+Without the flag, 0 nodes fails (known causes: a graph loaded by a pipeline older
+than spec 1.1, or a partial load with `--step`). With the flag, 0 nodes is a
+warning and the report says why. More than one node always fails. Q7 and any
+pre-release validation run **without** `--partial-load`; the flag exists only for
+development and partial loads.
 
 ### Post-Load Integrity Checks
 
-The `--post-load` mode runs four Cypher assertions. Each must return 0 to pass:
+The `--post-load` mode runs Cypher assertions; each must return 0 to pass. The
+full list is `_POST_LOAD_CHECKS` in `validation/validate_all_standards.py`; spec 1.1.0
+adds `weakness_required_enrichment`, the `consequence_*` checks (one parent, leaf,
+key, contiguous ordinals, scopes/impacts present, per-standard vocabularies) and
+`build_metadata_singleton`. The original four:
 
 | Check name | Invariant enforced |
 |---|---|

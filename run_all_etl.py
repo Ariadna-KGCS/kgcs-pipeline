@@ -37,6 +37,7 @@ if str(_SCRIPTS_DIR) not in sys.path:
 
 from etl import Neo4jWriter
 from etl.init_constraints import run_constraints
+from etl.build_metadata import run_build_metadata
 from etl.load_cpe    import CPELoader
 from etl.load_cve    import CVELoader
 from etl.load_cvss   import CVSSLoader
@@ -62,6 +63,10 @@ def _run_constraints(writer, raw_data_dir: Path, batch_size: int):
     return run_constraints(writer)
 
 
+def _run_build_metadata(writer, raw_data_dir: Path, batch_size: int):
+    return run_build_metadata(writer, raw_data_dir)
+
+
 def _make_loader(cls):
     def _runner(writer, raw_data_dir: Path, batch_size: int):
         loader = cls(
@@ -85,6 +90,8 @@ STEPS = [
     ("car",          _make_loader(CARLoader)),
     ("shield",       _make_loader(SHIELDLoader)),
     ("engage",       _make_loader(ENGAGELoader)),
+    # Postscript (spec 1.1.0): records spec, commit and source releases.
+    ("build_metadata", _run_build_metadata),
 ]
 
 STEP_NAMES = [name for name, _ in STEPS]

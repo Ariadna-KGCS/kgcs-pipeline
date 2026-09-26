@@ -26,3 +26,5 @@ gitleaks
 
 # Regenerated on demand by download_schemas.py; ETL never reads this mirror
 data/schemas/
+
+data/raw-*/

@@ -27,6 +27,12 @@ MITIGATED_BY target:
   The off_tech_id field contains ATT&CK IDs (T####, T####.###).
   Both Technique and SubTechnique nodes are matched without label
   discrimination using MERGE on attackId.
+
+Revoked/deprecated ATT&CK ids (spec 1.1.0, attck-to-owl-v1.0.md):
+  Every off_tech_id goes through the shared revoked-by remap built from
+  the three ATT&CK STIX bundles (attck_revocations.py). Revoked ids are
+  remapped to their live successor, deprecated ones are dropped, ids in no
+  bundle are unresolved; all three counts are logged, never silent.
 """
 
 import json
@@ -34,7 +40,9 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
+from .attck_revocations import apply_remap, build_revocation_remap
 from .base import AbstractETL
+from .load_attck import _find_attck_dir, _ordered_stix_files
 
 logger = logging.getLogger(__name__)
 
@@ -237,6 +245,10 @@ class D3FENDLoader(AbstractETL):
                 "nodes_created":  0,
                 "rels_created":   0,
                 "id_fallbacks":   0,
+                "mitigated_by":   0,
+                "mitigated_by_remapped":           0,
+                "mitigated_by_dropped_deprecated": 0,
+                "mitigated_by_unresolved":         0,
             },
         }
 
@@ -267,6 +279,34 @@ class D3FENDLoader(AbstractETL):
                     f"{fallbacks} D3FEND entries used URI fragment as fallback ID"
                 )
 
+            # Remap ATT&CK ids through the shared revoked-by table
+            attck_dir = _find_attck_dir(self.raw_data_dir)
+            stix_files = _ordered_stix_files(attck_dir) if attck_dir else []
+            if not stix_files:
+                self.log_error(
+                    f"ATT&CK STIX bundles not found under {self.raw_data_dir}: "
+                    "cannot apply the revoked-by remap to MITIGATED_BY"
+                )
+                result["errors"].append("ATT&CK STIX bundles missing")
+                return result
+            remap = build_revocation_remap(stix_files)
+            remapped_pairs, remap_counts = apply_remap(
+                ((row["attackId"], row["d3fendId"]) for row in mitigated_by),
+                remap,
+                target_index=0,
+            )
+            mitigated_by = [
+                {"attackId": attack_id, "d3fendId": d3fend_id}
+                for attack_id, d3fend_id in remapped_pairs
+            ]
+            self.log_success(
+                f"MITIGATED_BY remap: {remap_counts['rows']} (ATT&CK, D3FEND) pairs, "
+                f"{remap_counts['remapped']} remapped via revoked-by, "
+                f"{remap_counts['dropped_deprecated']} dropped as deprecated, "
+                f"{remap_counts['unresolved']} unresolved, "
+                f"{len(mitigated_by)} distinct pairs after remap"
+            )
+
             errors: List[str] = []
             nodes_created = 0
             rels_created  = 0
@@ -295,6 +335,10 @@ class D3FENDLoader(AbstractETL):
             result["stats"]["nodes_created"] = nodes_created
             result["stats"]["rels_created"]  = rels_created
             result["stats"]["id_fallbacks"]  = fallbacks
+            result["stats"]["mitigated_by"]  = len(mitigated_by)
+            result["stats"]["mitigated_by_remapped"] = remap_counts["remapped"]
+            result["stats"]["mitigated_by_dropped_deprecated"] = remap_counts["dropped_deprecated"]
+            result["stats"]["mitigated_by_unresolved"] = remap_counts["unresolved"]
             result["errors"]  = errors
             result["success"] = len(errors) == 0
 

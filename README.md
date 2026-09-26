@@ -48,7 +48,7 @@ Requires Python 3.11+ and a running Neo4j instance (2026.05.x recommended; Commu
 
 ## Spec Pin
 
-`SPEC_VERSION` pins the `kgcs-spec` release this pipeline builds against (currently **1.0.0**). Materialize it with:
+`SPEC_VERSION` pins the `kgcs-spec` release this pipeline builds against (currently **1.1.0**). Materialize it with:
 
 ```bash
 python sync_spec.py   # or: python sync_spec.py --url <kgcs-spec-url>
@@ -62,6 +62,14 @@ The script is idempotent: it wipes and rebuilds the gitignored `spec/` from the 
 - Load order: constraints → nodes → relationships, following the causal chain; no skipped hops.
 - Parameterized Cypher + `MERGE` only; dedupe in Python before batch writes; stream large datasets.
 - Verify external feed schemas from actual downloaded files before coding extraction logic.
+
+## Validation
+
+`python validation/validate_all_standards.py --post-load` checks the loaded graph
+(details in `docs/pipeline-execution-guide.md`). A full load has exactly one
+`BuildMetadata` node. `--partial-load` turns a missing one into a warning, for
+development and `--step` loads only; more than one always fails. Q7 and any
+pre-release validation run **without** `--partial-load`.
 
 ## Status
 
