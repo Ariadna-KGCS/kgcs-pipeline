@@ -28,14 +28,12 @@
     "IMPLEMENTS": 244,
     "MITIGATED_BY": 3087,
     "DEMONSTRATED_BY": 1212,
-    "CHILD_OF": 519,
+    "CHILD_OF": 533,
     "CAUSED_BY": 331107
   },
   "details": {
     "CHILD_OF": {
-      "as_loaded": 519,
-      "complete": 533,
-      "lost_to_flush_order": [
+      "v1.0_lost_to_flush_order": [
         [
           "CAPEC-13",
           "CAPEC-77"
@@ -92,7 +90,9 @@
           "CAPEC-663",
           "CAPEC-74"
         ]
-      ]
+      ],
+      "v1.1_minus_v1.0": 14,
+      "v1.0_minus_v1.1": 0
     },
     "PART_OF": {
       "v1.0_cross_domain": 618,

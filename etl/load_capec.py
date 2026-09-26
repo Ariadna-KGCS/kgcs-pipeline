@@ -23,6 +23,13 @@ SHACL invariant enforced here:
   SH-CORE-05: IMPLEMENTS source must be AttackPattern (loader creates the
   nodes on which load_attck.py will later hang IMPLEMENTS edges).
 
+Write order: every AttackPattern node is written (streamed in batches)
+before any DEMONSTRATED_BY / CHILD_OF edge. A CHILD_OF parent often comes
+later in the XML than its child; writing edges with the child's batch lost
+14 CHILD_OF edges on CAPEC 3.9 (519 instead of 533) and let a second run add
+them. The edge lists are small (~1.7k rows) and are deduplicated before the
+write.
+
 IMPLEMENTS is written only by load_attck.py (spec 1.1.0 coverage matrix):
 it needs the ATT&CK bundles for the revoked-by remap and the sub-technique
 roll-up, and Technique nodes do not exist yet at this step.
@@ -181,12 +188,14 @@ class CAPECLoader(AbstractETL):
             deprecated    = 0
             errors: List[str] = []
 
-            ap_batch:   List[Dict] = []
-            rel_batch:  List[Dict] = []
-            child_batch: List[Dict] = []
+            ap_batch: List[Dict] = []
+            # Edges wait until every AttackPattern node exists (see module
+            # docstring); dict keys deduplicate and keep XML order.
+            demonstrated_by: Dict[Tuple[str, str], None] = {}
+            child_of_pairs: Dict[Tuple[str, str], None] = {}
 
-            def _flush():
-                nonlocal nodes_created, rels_created
+            def _flush_nodes():
+                nonlocal nodes_created
                 if ap_batch:
                     r = self.writer.execute_batch(
                         _CYPHER_ATTACK_PATTERN, ap_batch, self.batch_size
@@ -194,34 +203,29 @@ class CAPECLoader(AbstractETL):
                     nodes_created += r.get("nodes_created", 0)
                     errors.extend(r.get("errors", []))
                     ap_batch.clear()
-                if rel_batch:
-                    r = self.writer.execute_batch(
-                        _CYPHER_DEMONSTRATED_BY, rel_batch, self.batch_size
-                    )
-                    rels_created += r.get("rels_created", 0)
-                    errors.extend(r.get("errors", []))
-                    rel_batch.clear()
-                if child_batch:
-                    r = self.writer.execute_batch(
-                        _CYPHER_CHILD_OF, child_batch, self.batch_size
-                    )
-                    rels_created += r.get("rels_created", 0)
-                    errors.extend(r.get("errors", []))
-                    child_batch.clear()
 
             for ap, edges, child_of in _iter_capec_records(xml_path):
                 if ap.get("status") == "Deprecated":
                     deprecated += 1
                 ap_batch.append(ap)
-                rel_batch.extend(edges)
-                child_batch.extend(child_of)
-                if (
-                    len(ap_batch) >= self.batch_size
-                    or len(rel_batch) >= self.batch_size
-                    or len(child_batch) >= self.batch_size
-                ):
-                    _flush()
-            _flush()
+                for e in edges:
+                    demonstrated_by[(e["cweId"], e["capecId"])] = None
+                for c in child_of:
+                    child_of_pairs[(c["childCapecId"], c["parentCapecId"])] = None
+                if len(ap_batch) >= self.batch_size:
+                    _flush_nodes()
+            _flush_nodes()
+
+            for cypher, rows in (
+                (_CYPHER_DEMONSTRATED_BY,
+                 [{"cweId": w, "capecId": c} for w, c in demonstrated_by]),
+                (_CYPHER_CHILD_OF,
+                 [{"childCapecId": ch, "parentCapecId": pa} for ch, pa in child_of_pairs]),
+            ):
+                if rows:
+                    r = self.writer.execute_batch(cypher, rows, self.batch_size)
+                    rels_created += r.get("rels_created", 0)
+                    errors.extend(r.get("errors", []))
 
             result["stats"]["nodes_created"] = nodes_created
             result["stats"]["rels_created"]  = rels_created

@@ -29,7 +29,7 @@ load creates both of its endpoint nodes.
 | `MITIGATED_BY` | 3,010 | 3,010 | yes | 3,087 | +77 |
 | `CAUSED_BY` | 331,107 | 331,107 | yes | 331,107 | +0 |
 | `DEMONSTRATED_BY` | 1,212 | 1,212 | yes | 1,212 | +0 |
-| `CHILD_OF` | 519 | 519 | yes | 519 | +0 |
+| `CHILD_OF` | 519 | 519 | yes | 533 | +14 |
 
 Node counts do not change: Tactic 39, Technique 378, SubTechnique 540,
 AttackPattern 615, Weakness 969, DefensiveTechnique 145.
@@ -146,20 +146,25 @@ The D3FEND mappings give 3,109 distinct (ATT&CK, D3FEND) pairs.
   they differ from ADR-0002's raw per-year evidence (345,368 pairs,
   38,420 ADP assignments).
 
-## CHILD_OF: existing defect, unchanged here
+## CHILD_OF (+14, none removed; second commit)
 
-`load_capec.py` flushes nodes and edges together whenever any buffer
-reaches `--batch-size`. With the default 1,000 there is one mid-file flush,
-triggered by `DEMONSTRATED_BY`. At that flush, 14 `CHILD_OF` edges whose
-parent comes later in the XML find no parent node:
+- **Cause.** `load_capec.py` used to flush nodes and edges together
+  whenever any buffer reached `--batch-size`. With the default 1,000 there
+  was one mid-file flush, triggered by `DEMONSTRATED_BY`. At that flush,
+  14 `CHILD_OF` edges whose parent comes later in the XML found no parent
+  node:
+  - `CAPEC-13→77`, `140→74`, `162→77`, `163→98`, `164→98`
+  - `219→94`, `384→94`, `386→94`, `463→97`, `466→94`
+  - `608→97`, `656→98`, `662→94`, `663→74`
 
-- `CAPEC-13→77`, `140→74`, `162→77`, `163→98`, `164→98`
-- `219→94`, `384→94`, `386→94`, `463→97`, `466→94`
-- `608→97`, `656→98`, `662→94`, `663→74`
-
-A second `--step capec` run would add these edges (533). The script models
-the flush so that its expectation matches what a clean load writes (519).
-Not fixed in Q5.
+  A second `--step capec` run would then add them, so kgcs-demo holds 519.
+- **Fix.** The fixed loader streams every AttackPattern node first, then
+  writes the deduplicated `DEMONSTRATED_BY` and `CHILD_OF` edges. One run
+  gives 533, every ChildOf between existing AttackPatterns in CAPEC 3.9, and
+  a second run changes nothing.
+- **v1.0 mode** replays the old flush order and still reproduces 519.
+- **Impact.** The 2026-09-26 snapshot exports `bridge_child_of.csv`, but E1b
+  only counts it in its gate, so there is no paper impact.
 
 ## Input files (sha256 prefix)
 

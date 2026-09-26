@@ -152,12 +152,14 @@ def read_attck(raw: Path) -> Dict:
 
 
 def read_capec(raw: Path, weakness_ids: Set[str], batch_size: int) -> Dict:
-    """CAPEC nodes and edges, replaying CAPECLoader.run's flush order.
+    """CAPEC nodes and edges.
 
-    CAPECLoader flushes nodes and edges together whenever any buffer reaches
-    batch_size. A CHILD_OF whose parent appears later in the XML than the
-    flush finds no parent node and is lost (pre-existing behaviour, unchanged
-    by Q5); "CHILD_OF_complete" is the count without that loss.
+    "CHILD_OF_v10" replays the pre-fix CAPECLoader flush order: nodes and
+    edges were flushed together whenever any buffer reached batch_size, so a
+    CHILD_OF whose parent came later in the XML than the flush found no
+    parent node and was lost. "CHILD_OF" is what the fixed loader writes
+    (all nodes first, then the edges): every ChildOf between existing
+    AttackPatterns.
     """
     xml_path = raw / "CAPEC" / "capec_latest.xml"
     patterns: Set[str] = set()
@@ -190,8 +192,8 @@ def read_capec(raw: Path, weakness_ids: Set[str], batch_size: int) -> Dict:
         "patterns": patterns,
         "taxonomy_refs": _capec_taxonomy_pairs(xml_path),
         "DEMONSTRATED_BY": {p for p in demonstrated if p[0] in weakness_ids and p[1] in patterns},
-        "CHILD_OF": child_loaded,
-        "CHILD_OF_complete": {p for p in child_all if p[0] in patterns and p[1] in patterns},
+        "CHILD_OF_v10": child_loaded,
+        "CHILD_OF": {p for p in child_all if p[0] in patterns and p[1] in patterns},
     }
 
 
@@ -362,7 +364,7 @@ def compute(raw: Path, skip_cve: bool, batch_size: int = 1000) -> Dict:
             "IMPLEMENTS": len(implements_v10),
             "MITIGATED_BY": len(mitigated_v10),
             "DEMONSTRATED_BY": len(capec["DEMONSTRATED_BY"]),
-            "CHILD_OF": len(capec["CHILD_OF"]),
+            "CHILD_OF": len(capec["CHILD_OF_v10"]),
         },
         "v1.1": {
             "PART_OF": len(part_of_v11),
@@ -374,9 +376,9 @@ def compute(raw: Path, skip_cve: bool, batch_size: int = 1000) -> Dict:
         },
         "details": {
             "CHILD_OF": {
-                "as_loaded": len(capec["CHILD_OF"]),
-                "complete": len(capec["CHILD_OF_complete"]),
-                "lost_to_flush_order": sorted(capec["CHILD_OF_complete"] - capec["CHILD_OF"]),
+                "v1.0_lost_to_flush_order": sorted(capec["CHILD_OF"] - capec["CHILD_OF_v10"]),
+                "v1.1_minus_v1.0": len(capec["CHILD_OF"] - capec["CHILD_OF_v10"]),
+                "v1.0_minus_v1.1": len(capec["CHILD_OF_v10"] - capec["CHILD_OF"]),
             },
             "PART_OF": {
                 "v1.0_cross_domain": sum(cross.values()),

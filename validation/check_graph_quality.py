@@ -10,7 +10,7 @@ Read-only. The target database comes from NEO4J_DATABASE; set it in the SAME
 command, and check the "Neo4jWriter connected ... (database=...)" log line:
 
     $env:NEO4J_DATABASE='kgcs-q-smoke'; python validation/check_graph_quality.py `
-        --expected expected.json --edges PART_OF,IMPLEMENTS,MITIGATED_BY
+        --expected expected.json --edges PART_OF,IMPLEMENTS,MITIGATED_BY,CHILD_OF
 
 Exit 0 when every selected check passes, 1 otherwise.
 """
@@ -40,8 +40,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--expected", required=True,
                         help="JSON written by expected_graph_deltas.py --json")
-    parser.add_argument("--edges", default="PART_OF,IMPLEMENTS,MITIGATED_BY",
-                        help="comma-separated edge types to compare (default: the Q5 bridges)")
+    parser.add_argument("--edges", default="PART_OF,IMPLEMENTS,MITIGATED_BY,CHILD_OF",
+                        help="comma-separated edge types to compare (default: the Q5 bridges and CHILD_OF)")
     parser.add_argument("--raw-data-dir", default="data/raw")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)-7s %(name)s: %(message)s")
