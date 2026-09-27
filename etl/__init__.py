@@ -17,6 +17,10 @@ Import order when using individual loaders:
     from etl.load_car import CARLoader
     from etl.load_shield import SHIELDLoader
     from etl.load_engage import ENGAGELoader
+    from etl.load_kev import KEVLoader        # decision (after CVSS)
+    from etl.load_epss import EPSSLoader
+    from etl.load_ssvc import SSVCLoader
+    from etl.load_atlas import ATLASLoader    # after ATT&CK
 """
 
 from .base         import AbstractETL
@@ -31,6 +35,10 @@ from .load_d3fend  import D3FENDLoader
 from .load_car     import CARLoader
 from .load_shield  import SHIELDLoader
 from .load_engage  import ENGAGELoader
+from .load_kev     import KEVLoader
+from .load_epss    import EPSSLoader
+from .load_ssvc    import SSVCLoader
+from .load_atlas   import ATLASLoader
 
 __all__ = [
     "AbstractETL",
@@ -45,4 +53,8 @@ __all__ = [
     "CARLoader",
     "SHIELDLoader",
     "ENGAGELoader",
+    "KEVLoader",
+    "EPSSLoader",
+    "SSVCLoader",
+    "ATLASLoader",
 ]

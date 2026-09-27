@@ -1,3 +1,4 @@
+import gzip
 import json
 import os
 from datetime import datetime, timezone
@@ -29,7 +30,29 @@ def _bundle(objects) -> str:
     return json.dumps({"type": "bundle", "id": "bundle--x", "objects": objects})
 
 
-def _raw_tree(raw: Path, collections=(None, None, None)) -> Path:
+def _v12_sources(raw: Path) -> None:
+    """KEV / EPSS / ATLAS raw files (spec 1.2 sources)."""
+    _touch(raw / "KEV" / "known_exploited_vulnerabilities.json", json.dumps({
+        "title": "CISA Catalog of Known Exploited Vulnerabilities",
+        "catalogVersion": "2026.09.25", "dateReleased": "2026-09-25T18:58:16.5029Z",
+        "count": 0, "vulnerabilities": []}))
+    _gz(raw / "EPSS" / "epss_scores-2026-09-27.csv.gz",
+        "#model_version:v2026.06.15,score_date:2026-09-27T12:00:21Z\n"
+        "cve,epss,percentile\nCVE-1999-0001,0.03351,0.88245\n")
+    _touch(raw / "ATLAS" / "ATLAS-2026.09.yaml",
+           "format-version: 6.0.0\ncollection:\n  version: '2026.09'\n")
+    _touch(raw / "ATLAS" / "ATLAS-latest.yaml",               # never read
+           "format-version: 6.0.0\ncollection:\n  version: '2099.01'\n")
+
+
+def _gz(path: Path, text: str) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with gzip.open(path, "wt", encoding="utf-8") as fh:
+        fh.write(text)
+    return path
+
+
+def _raw_tree(raw: Path, collections=(None, None, None), v12: bool = True) -> Path:
     _touch(raw / "CWE" / "cwec_v4.19.1.xml", '<Weakness_Catalog Name="CWE" Version="4.19.1"/>')
     _touch(raw / "CWE" / "cwec_v4.20.xml",
            '<Weakness_Catalog Name="CWE" Version="4.20" Date="2026-04-30"><Weaknesses/></Weakness_Catalog>')
@@ -62,6 +85,8 @@ def _raw_tree(raw: Path, collections=(None, None, None)) -> Path:
     _touch(raw / "car" / "analytics" / "CAR-2013-01-002.yaml", "id: CAR-2013-01-002\n")
     _touch(raw / "SHIELD" / "techniques.json", "[]")
     _touch(raw / "ENGAGE" / "activities.json", "[]")
+    if v12:
+        _v12_sources(raw)
     return raw
 
 
@@ -79,7 +104,26 @@ def test_source_snapshots_read_the_exact_release_from_raw_files(tmp_path: Path):
         "CAR=download:2026-09-06",
         "SHIELD=download:2026-09-06",
         "ENGAGE=download:2026-09-06",
+        "KEV=2026.09.25",                            # catalogVersion
+        "EPSS=2026-09-27;model:v2026.06.15",         # header score_date + model
+        "ATLAS=2026.09",                             # versioned YAML, not latest
     ]
+
+
+def test_v12_keys_leave_the_chain_keys_unchanged(tmp_path: Path):
+    """Chain equivalence (Q19): BuildMetadata minus the spec 1.2 keys is the v1.1 record."""
+    with_v12, _ = bm.source_snapshots(_raw_tree(tmp_path / "a"))
+    without, missing = bm.source_snapshots(_raw_tree(tmp_path / "b", v12=False))
+    assert missing == ["KEV", "EPSS", "ATLAS"]
+    assert with_v12[:10] == without
+
+
+def test_epss_snapshot_range_for_a_history_backfill(tmp_path: Path):
+    raw = _raw_tree(tmp_path / "raw")
+    _gz(raw / "EPSS" / "epss_scores-2026-06-14.csv.gz",
+        "#model_version:v2025.03.14,score_date:2026-06-14T12:00:00Z\ncve,epss,percentile\n")
+    snapshots = bm.source_snapshots(raw)[0]
+    assert "EPSS=2026-06-14..2026-09-27;model:v2025.03.14+v2026.06.15" in snapshots
 
 
 def test_nvd_timestamps_single_value_when_files_agree(tmp_path: Path):
@@ -107,7 +151,7 @@ def test_missing_sources_are_reported_not_invented(tmp_path: Path):
     _touch(raw / "CAPEC" / "capec_latest.xml", '<Attack_Pattern_Catalog Version="3.9"/>')
     snapshots, missing = bm.source_snapshots(raw)
     assert snapshots == ["CAPEC=3.9"]
-    assert "CWE" in missing and "ATTCK" in missing and len(missing) == 9
+    assert "CWE" in missing and "ATTCK" in missing and "KEV" in missing and len(missing) == 12
 
 
 class _OneWriter:
@@ -129,7 +173,7 @@ def test_run_build_metadata_merges_a_single_node(tmp_path: Path):
     assert params["specVersion"] == bm.spec_version()
     assert len(params["pipelineCommit"]) == 40
     assert params["buildTimestamp"].endswith("Z")
-    assert len(params["sourceSnapshots"]) == 10
+    assert len(params["sourceSnapshots"]) == 13
 
 
 def test_build_record_conforms_to_pinned_build_shape(tmp_path: Path):

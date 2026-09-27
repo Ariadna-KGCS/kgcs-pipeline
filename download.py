@@ -66,7 +66,8 @@ def load_config(config_file: str = None) -> dict:
 
 # Supported standards
 SUPPORTED_STANDARDS = {
-    'cve', 'cwe', 'cpe', 'cpematch', 'cvss', 'capec', 'attck', 'd3fend', 'car', 'engage', 'shield'
+    'cve', 'cwe', 'cpe', 'cpematch', 'cvss', 'capec', 'attck', 'd3fend', 'car', 'engage', 'shield',
+    'kev', 'epss', 'atlas',
 }
 
 
