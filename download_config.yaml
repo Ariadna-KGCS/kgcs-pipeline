@@ -13,7 +13,7 @@ retries: 5
 output_dir: data/raw
 
 # List of standards to enable
-# Available: cve, cwe, cpe, cvss, capec, attck, d3fend, car, engage, shield
+# Available: cve, cwe, cpe, cvss, capec, attck, d3fend, car, engage, shield, kev, epss, atlas
 enabled_standards:
   - cve
   - cwe
@@ -25,6 +25,9 @@ enabled_standards:
   - car
   - engage
   - shield
+  - kev
+  - epss
+  - atlas
 
 # Validate downloaded data after download (default: true)
 validate: true
@@ -62,6 +65,15 @@ standards:
     timeout: 300
     enabled: true
   shield:
+    timeout: 300
+    enabled: true
+  kev:
+    timeout: 300
+    enabled: true
+  epss:
+    timeout: 300
+    enabled: true
+  atlas:
     timeout: 300
     enabled: true
 

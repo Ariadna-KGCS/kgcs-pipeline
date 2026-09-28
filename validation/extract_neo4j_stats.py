@@ -54,6 +54,17 @@ EXPECTED_MINIMUMS: Dict[str, int] = {
     "SubTechnique":              400,
     "Tactic":                     14,
     "Weakness":                  900,
+    # spec 1.2.0 decision extension (ADR-0003). Floors well under the offline
+    # expectation on the 2026-09 raw data (docs/spec-v1.2-deltas.md: KEV 1,711,
+    # EPSS 368,628 for one score date, SSVC 182,047).
+    "KevEntry":                1_500,
+    "EpssScore":             300_000,
+    "SsvcDecision":          150_000,
+    # spec 1.2.1 ATLAS module (ADR-0004); release 2026.09: 16 / 120 / 88 / 40
+    "AtlasTactic":                14,
+    "AtlasTechnique":            100,
+    "AtlasSubTechnique":          70,
+    "AtlasMitigation":            30,
 }
 
 # ---------------------------------------------------------------------------
@@ -77,6 +88,14 @@ NODE_LABELS = [
     "EngagementConcept",
     "Consequence",
     "BuildMetadata",
+    # spec 1.2 (decision extension, ATLAS module)
+    "KevEntry",
+    "EpssScore",
+    "SsvcDecision",
+    "AtlasTactic",
+    "AtlasTechnique",
+    "AtlasSubTechnique",
+    "AtlasMitigation",
 ]
 
 # ---------------------------------------------------------------------------
@@ -98,6 +117,15 @@ REL_TYPES = [
     "COUNTERED_BY",
     "DISRUPTS",
     "HAS_CONSEQUENCE",
+    # spec 1.2 (decision extension, ATLAS module); ATLAS never writes PART_OF /
+    # SUBTECHNIQUE_OF, so the two counts above stay ATT&CK-only (v1.2.1)
+    "HAS_KEV_ENTRY",
+    "HAS_EPSS",
+    "HAS_SSVC",
+    "ACHIEVES",
+    "SPECIALIZES",
+    "MITIGATES",
+    "ADAPTED_FROM",
 ]
 
 # ---------------------------------------------------------------------------

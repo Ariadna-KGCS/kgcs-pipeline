@@ -1,0 +1,196 @@
+{
+ "ATLAS": {
+  "ADAPTED_FROM": 44,
+  "ADAPTED_FROM_distinct_targets": 39,
+  "ADAPTED_FROM_dropped_deprecated": 0,
+  "ADAPTED_FROM_remapped": 1,
+  "ADAPTED_FROM_remapped_detail": [
+   "AML.T0073: T1656 -> T1684.001"
+  ],
+  "ADAPTED_FROM_rows": 44,
+  "ADAPTED_FROM_to_SubTechnique": 9,
+  "ADAPTED_FROM_unresolved": 0,
+  "ADAPTED_FROM_unresolved_ids": [],
+  "achieves": 225,
+  "attack_reference_rows": 44,
+  "excluded_case_studies": 73,
+  "excluded_employs": 665,
+  "excluded_mitigation_attack_reference": 4,
+  "excluded_tactic_attack_reference": 14,
+  "file": "ATLAS-2026.09.yaml",
+  "mitigates": 361,
+  "mitigations": 40,
+  "release": "2026.09",
+  "specializes": 88,
+  "subtechniques": 88,
+  "tactics": 16,
+  "techniques": 120
+ },
+ "EPSS": {
+  "EpssScore": 368628,
+  "HAS_EPSS": 368628,
+  "dropped_no_vulnerability": 11438,
+  "files": [
+   "epss_scores-2026-09-27.csv.gz"
+  ],
+  "headers": [
+   {
+    "model_version": "v2026.06.15",
+    "score_date": "2026-09-27T12:00:21Z",
+    "score_day": "2026-09-27"
+   }
+  ],
+  "rows": 380066
+ },
+ "KEV": {
+  "HAS_KEV_ENTRY": 1711,
+  "KevEntry": 1711,
+  "catalogVersion": "2026.09.25",
+  "dropped_ids": [
+   "CVE-2026-58704",
+   "CVE-2026-75650",
+   "CVE-2026-76460",
+   "CVE-2026-76461",
+   "CVE-2026-81963",
+   "CVE-2026-84869",
+   "CVE-2026-85102",
+   "CVE-2026-85706",
+   "CVE-2026-85880",
+   "CVE-2026-87491",
+   "CVE-2026-87886",
+   "CVE-2026-87902",
+   "CVE-2026-93616",
+   "CVE-2026-93952",
+   "CVE-2026-94127"
+  ],
+  "dropped_no_vulnerability": 15,
+  "duplicates": 0,
+  "entries": 1726
+ },
+ "SSVC": {
+  "HAS_SSVC": 182047,
+  "SsvcDecision": 182047,
+  "adp_loadable_entries": 186562,
+  "distinct_cves": 182039,
+  "distinct_decisions": 182047,
+  "dropped": {
+   "source:2fdefc65-d750-4b8d-96ee-6e2c0c42dbfe": 1,
+   "source:2ffdacf6-8681-47df-b023-4f11abd61c1d": 1,
+   "source:44488dab-36db-4358-99f9-bc116477f914": 3,
+   "source:87c8e6ad-f0f5-4ca8-89e2-89f26d6ed932": 11,
+   "source:9119a7d8-5eab-497f-8521-727c672e3725": 144,
+   "source:cve@takeonme.org": 3,
+   "source:ics-cert@hq.dhs.gov": 12
+  },
+  "dropped_no_vulnerability": 0,
+  "duplicates_collapsed": 4515,
+  "ssvcV203_entries_per_file": {
+   "nvdcve-2.0-2002.json": {
+    "adp_loadable_entries": 45,
+    "ssvcV203_entries": 45
+   },
+   "nvdcve-2.0-2003.json": {
+    "adp_loadable_entries": 3,
+    "ssvcV203_entries": 3
+   },
+   "nvdcve-2.0-2004.json": {
+    "adp_loadable_entries": 11,
+    "ssvcV203_entries": 11
+   },
+   "nvdcve-2.0-2005.json": {
+    "adp_loadable_entries": 21,
+    "ssvcV203_entries": 21
+   },
+   "nvdcve-2.0-2006.json": {
+    "adp_loadable_entries": 43,
+    "ssvcV203_entries": 43
+   },
+   "nvdcve-2.0-2007.json": {
+    "adp_loadable_entries": 40,
+    "ssvcV203_entries": 40
+   },
+   "nvdcve-2.0-2008.json": {
+    "adp_loadable_entries": 40,
+    "ssvcV203_entries": 40
+   },
+   "nvdcve-2.0-2009.json": {
+    "adp_loadable_entries": 64,
+    "ssvcV203_entries": 64
+   },
+   "nvdcve-2.0-2010.json": {
+    "adp_loadable_entries": 95,
+    "ssvcV203_entries": 95
+   },
+   "nvdcve-2.0-2011.json": {
+    "adp_loadable_entries": 83,
+    "ssvcV203_entries": 83
+   },
+   "nvdcve-2.0-2012.json": {
+    "adp_loadable_entries": 114,
+    "ssvcV203_entries": 114
+   },
+   "nvdcve-2.0-2013.json": {
+    "adp_loadable_entries": 132,
+    "ssvcV203_entries": 132
+   },
+   "nvdcve-2.0-2014.json": {
+    "adp_loadable_entries": 134,
+    "ssvcV203_entries": 134
+   },
+   "nvdcve-2.0-2015.json": {
+    "adp_loadable_entries": 183,
+    "ssvcV203_entries": 183
+   },
+   "nvdcve-2.0-2016.json": {
+    "adp_loadable_entries": 749,
+    "ssvcV203_entries": 749
+   },
+   "nvdcve-2.0-2017.json": {
+    "adp_loadable_entries": 1472,
+    "ssvcV203_entries": 1474
+   },
+   "nvdcve-2.0-2018.json": {
+    "adp_loadable_entries": 1999,
+    "ssvcV203_entries": 1999
+   },
+   "nvdcve-2.0-2019.json": {
+    "adp_loadable_entries": 2192,
+    "ssvcV203_entries": 2192
+   },
+   "nvdcve-2.0-2020.json": {
+    "adp_loadable_entries": 2946,
+    "ssvcV203_entries": 2946
+   },
+   "nvdcve-2.0-2021.json": {
+    "adp_loadable_entries": 5187,
+    "ssvcV203_entries": 5187
+   },
+   "nvdcve-2.0-2022.json": {
+    "adp_loadable_entries": 14336,
+    "ssvcV203_entries": 14336
+   },
+   "nvdcve-2.0-2023.json": {
+    "adp_loadable_entries": 25525,
+    "ssvcV203_entries": 25525
+   },
+   "nvdcve-2.0-2024.json": {
+    "adp_loadable_entries": 38126,
+    "ssvcV203_entries": 38130
+   },
+   "nvdcve-2.0-2025.json": {
+    "adp_loadable_entries": 41244,
+    "ssvcV203_entries": 41324
+   },
+   "nvdcve-2.0-2026.json": {
+    "adp_loadable_entries": 47237,
+    "ssvcV203_entries": 47324
+   },
+   "nvdcve-2.0-modified.json": {
+    "adp_loadable_entries": 4541,
+    "ssvcV203_entries": 4543
+   }
+  }
+ },
+ "Vulnerability": 386939,
+ "raw_data_dir": "data\\raw"
+}

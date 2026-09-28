@@ -48,7 +48,7 @@ Requires Python 3.11+ and a running Neo4j instance (2026.05.x recommended; Commu
 
 ## Spec Pin
 
-`SPEC_VERSION` pins the `kgcs-spec` release this pipeline builds against (currently **1.1.0**). Materialize it with:
+`SPEC_VERSION` pins the `kgcs-spec` release this pipeline builds against (currently **1.2.1**). Materialize it with:
 
 ```bash
 python sync_spec.py   # or: python sync_spec.py --url <kgcs-spec-url>
@@ -60,6 +60,7 @@ The script is idempotent: it wipes and rebuilds the gitignored `spec/` from the 
 
 - Pins a released `kgcs-spec` version; graph shape must match its contracts.
 - Load order: constraints → nodes → relationships, following the causal chain; no skipped hops.
+- Outside the chain (spec 1.2): the decision leaves KEV / EPSS / SSVC load right after CVSS and hang only off `Vulnerability`; the ATLAS matrix loads right after ATT&CK and leaves ATLAS only through `ADAPTED_FROM`. Expected counts: `docs/spec-v1.2-deltas.md`.
 - Parameterized Cypher + `MERGE` only; dedupe in Python before batch writes; stream large datasets.
 - Verify external feed schemas from actual downloaded files before coding extraction logic.
 

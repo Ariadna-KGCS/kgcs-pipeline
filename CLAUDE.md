@@ -12,6 +12,7 @@ This repo builds the KGCS Neo4j graph. It consumes the KGCS standard from `kgcs-
 ## Hard Rules
 
 1. **Causal chain order.** Load constraints first, then nodes and relationships in `CPE → CVE/CVSS → CWE → CAPEC → ATT&CK → {D3FEND, CAR, SHIELD, ENGAGE}` order. No shortcut edges, ever.
+   Spec 1.2 adds steps outside the chain: decision leaves (`kev`, `epss`, `ssvc`) right after `cvss`, adhered only to `Vulnerability`; ATLAS (`atlas`) right after `attck`, whose only edge out of ATLAS is `ADAPTED_FROM`. Neither may write a chain edge type (post-load checks `decision_no_chain_edges`, `atlas_boundary`).
 2. **Idempotency.** Parameterized Cypher and `MERGE` only; never string-built queries. Re-running a loader must not duplicate nodes or edges.
 3. **Cardinality.** Deduplicate in Python before batch writes when graph cardinality invariants depend on it.
 4. **Memory.** Stream or process file-by-file for large datasets (CPE ~15 chunks, CPE-MATCH ~56 chunks, CVE per-year files); never accumulate everything in memory.

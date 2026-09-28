@@ -24,9 +24,12 @@ Output layout (mirrors data/raw/ naming):
     data/schemas/CPE-MATCH/cpematch_api_json_2.0.schema
     data/schemas/CVSS/cvss-v{2.0,3.0,3.1,4.0}.json
     data/schemas/ATTCK-STIX/stix2.0.zip   (OASIS STIX 2.0 JSON Schemas)
+    data/schemas/KEV/known_exploited_vulnerabilities_schema.json
+    data/schemas/SSVC/ssvc-v2.0.3.json
 
 No machine schema exists for: d3fend (the OWL ontology is the schema),
-car (YAML format defined in prose), shield, engage (plain JSON exports).
+car (YAML format defined in prose), shield, engage (plain JSON exports),
+epss (CSV), atlas (format 6.0.0 has none).
 See NO_SCHEMA below; --list prints the reasons.
 """
 
@@ -57,6 +60,9 @@ SCHEMA_SOURCES: Dict[str, List[Tuple[str, str]]] = {
     # OASIS STIX 2.0 JSON Schemas (branch zip: schemas cross-reference each
     # other with relative paths, so single files are not self-contained).
     "attck": [("stix_schemas_zip", "ATTCK-STIX")],
+    # spec 1.2.0 decision extension / spec 1.2.1 ATLAS module
+    "kev":   [("kev_schema", "KEV")],
+    "ssvc":  [("ssvc_v203_schema", "SSVC")],
 }
 
 # Standards with no downloadable machine schema — documented so their absence
@@ -69,6 +75,11 @@ NO_SCHEMA: Dict[str, str] = {
     "shield": "static JSON dumps from the retired SHIELD site; "
               "no schema published",
     "engage": "JSON exports from engage.mitre.org; no schema published",
+    "epss":   "gzip CSV (#model_version/score_date comment line, then cve,epss,"
+              "percentile); format documented at first.org/epss/data, no schema",
+    "atlas":  "no schema for format 6.0.0 (dist/v6/ATLAS-<release>.yaml); "
+              "atlas-data dist/schemas/atlas_output_schema.json describes the "
+              "legacy `matrices` layout and does not apply",
 }
 
 

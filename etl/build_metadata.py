@@ -1,5 +1,5 @@
 """
-BuildMetadata postscript (spec 1.1.0, build-metadata-v1.0.owl, build.shacl.ttl v1.1).
+BuildMetadata postscript (spec 1.1.0, build-metadata-v1.0.owl; build.shacl.ttl v1.2 since spec 1.2).
 
 Final step of the KGCS load: writes the single (:BuildMetadata) node that
 records which spec, which pipeline commit and which exact source releases
@@ -25,6 +25,16 @@ release the source states wherever it states one, else the download instant.
     CVSS     same files as CVE, same value
     CPE      NVD feed `timestamp` of the CPE and CPE-MATCH chunks together
     CAR, SHIELD, ENGAGE   no release stated in the files: download:<file date>
+
+Spec 1.2 keys (mapping-coverage-matrix-v1.2.md, build.shacl.ttl v1.2), read
+by the loaders' own helpers from the same raw files:
+
+    KEV      catalog `catalogVersion`                        KEV=2026.09.25
+    EPSS     header score_date (date part) and model_version
+             EPSS=2026-09-27;model:v2026.06.15 (a history back-fill gives
+             <first>..<last>;model:<v1>+<v2>)
+    ATLAS    `collection.version` of the versioned YAML      ATLAS=2026.09
+    SSVC has no key of its own: it is covered by CVE=.
 
 Common rule: the release when the source states one (CWE, CAPEC, D3FEND,
 ATT&CK collection); dates or ranges only when it has none.
@@ -54,15 +64,20 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Dict, Iterable, List, Optional, Tuple
 
+from .load_atlas import atlas_snapshot
 from .load_attck import _find_attck_dir, _ordered_stix_files
+from .load_epss import epss_snapshot
+from .load_kev import kev_snapshot
 from .load_cwe import select_cwe_xml
 
 logger = logging.getLogger(__name__)
 
 _REPO = Path(__file__).resolve().parents[1]
 
-# build.shacl.ttl sh:pattern order of the ten KGCS standards
-SOURCES = ("CPE", "CVE", "CVSS", "CWE", "CAPEC", "ATTCK", "D3FEND", "CAR", "SHIELD", "ENGAGE")
+# build.shacl.ttl v1.2 sh:pattern order: the ten chain standards, then the
+# spec 1.2 sources (decision extension, ATLAS module)
+SOURCES = ("CPE", "CVE", "CVSS", "CWE", "CAPEC", "ATTCK", "D3FEND", "CAR", "SHIELD", "ENGAGE",
+           "KEV", "EPSS", "ATLAS")
 
 _CYPHER_BUILD_METADATA = """\
 MERGE (b:BuildMetadata)
@@ -186,6 +201,9 @@ def source_snapshots(raw: Path) -> Tuple[List[str], List[str]]:
         "CAR": lambda: _download_date(_car_dir(raw).rglob("*.yaml")),
         "SHIELD": lambda: _download_date((raw / "SHIELD").glob("*.json")),
         "ENGAGE": lambda: _download_date((raw / "ENGAGE").glob("*.json")),
+        "KEV": lambda: kev_snapshot(raw),
+        "EPSS": lambda: epss_snapshot(raw),
+        "ATLAS": lambda: atlas_snapshot(raw),
     }
     snapshots: List[str] = []
     missing: List[str] = []

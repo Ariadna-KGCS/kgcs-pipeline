@@ -1,0 +1,1 @@
+{"matchStrings": [{"matchString": {"matchCriteriaId": "91C87C3E-F6EF-4375-BA59-76354CE3EFF5", "matches": [{"cpeName": "CPE:2.3:O:LINUX:LINUX_KERNEL:4.14.314:*:*:*:*:*:*:*", "cpeNameId": "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA"}, {"cpeName": "cpe:2.3:o:linux:linux_kernel:4.14.315:*:*:*:*:*:*:*", "cpeNameId": "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB"}]}}]}

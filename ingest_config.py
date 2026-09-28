@@ -98,6 +98,27 @@ class APIEndpoints:
             ("d3fend-full-mappings.json", f"{self.d3fend_base}d3fend-full-mappings.json"),
         ]
 
+    # ==================== Decision extension (spec 1.2.0, ADR-0003) ====================
+    # CISA KEV: JSON feed (the CSV twin is not used) and its JSON Schema
+    kev_json: str = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
+    kev_schema: str = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities_schema.json"
+    # FIRST EPSS daily CSV (gzip). The stable URL redirects to the current day;
+    # dated files are epss_scores-<YYYY-MM-DD>.csv.gz under the same base.
+    epss_base: str = "https://epss.empiricalsecurity.com/"
+    epss_current: str = f"{epss_base}epss_scores-current.csv.gz"
+    # SSVC v2.0.3 as embedded by NVD in metrics.ssvcV203 (referenced from cve_schema)
+    ssvc_v203_schema: str = "https://csrc.nist.gov/schema/nvd/api/2.0/ssvc-v2.0.3.json"
+
+    # ==================== MITRE ATLAS (spec 1.2.1, ADR-0004) ====================
+    # Versioned YAML (format 6.0.0), never dist/ATLAS-latest.yaml (a moving
+    # symlink). Bumping atlas_release is an explicit, reviewed change.
+    atlas_release: str = "2026.09"
+    atlas_dist_base: str = "https://raw.githubusercontent.com/mitre-atlas/atlas-data/main/dist/"
+
+    @property
+    def atlas_yaml(self) -> str:
+        return f"{self.atlas_dist_base}v6/ATLAS-{self.atlas_release}.yaml"
+
     # ==================== NIST NVD ====================
     # National Vulnerability Database
     cve_base: str = "https://nvd.nist.gov/feeds/json/cve/2.0/"

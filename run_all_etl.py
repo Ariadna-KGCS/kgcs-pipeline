@@ -48,6 +48,10 @@ from etl.load_d3fend import D3FENDLoader
 from etl.load_car    import CARLoader
 from etl.load_shield import SHIELDLoader
 from etl.load_engage import ENGAGELoader
+from etl.load_kev    import KEVLoader
+from etl.load_epss   import EPSSLoader
+from etl.load_ssvc   import SSVCLoader
+from etl.load_atlas  import ATLASLoader
 
 logger = logging.getLogger("run_all_etl")
 
@@ -83,9 +87,17 @@ STEPS = [
     ("cpe",          _make_loader(CPELoader)),
     ("cve",          _make_loader(CVELoader)),
     ("cvss",         _make_loader(CVSSLoader)),
+    # Decision extension (spec 1.2.0, ADR-0003): leaves on Vulnerability,
+    # outside the chain; they only need the Vulnerability nodes.
+    ("kev",          _make_loader(KEVLoader)),
+    ("epss",         _make_loader(EPSSLoader)),
+    ("ssvc",         _make_loader(SSVCLoader)),
     ("cwe",          _make_loader(CWELoader)),
     ("capec",        _make_loader(CAPECLoader)),
     ("attck",        _make_loader(ATTCKLoader)),
+    # ATLAS module (spec 1.2.1, ADR-0004): parallel matrix; ADAPTED_FROM
+    # needs the ATT&CK nodes.
+    ("atlas",        _make_loader(ATLASLoader)),
     ("d3fend",       _make_loader(D3FENDLoader)),
     ("car",          _make_loader(CARLoader)),
     ("shield",       _make_loader(SHIELDLoader)),

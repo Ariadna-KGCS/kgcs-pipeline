@@ -238,6 +238,120 @@ _POST_LOAD_CHECKS: List[Tuple[str, str, str]] = [
         "CAPEC Consequence scopes / impacts / likelihood within the CAPEC vocabularies",
         {"scopes": list(SCOPES), "impacts": list(CAPEC_IMPACTS), "likelihoods": list(LIKELIHOODS)},
     ),
+    # --- spec 1.2.0: decision extension (ADR-0003, decision.shacl.ttl) ---
+    # Leaves adhered to Vulnerability; they pass trivially on a graph that
+    # has none of the three labels.
+    (
+        "decision_leaf_adherence",
+        "MATCH (d) WHERE d:KevEntry OR d:EpssScore OR d:SsvcDecision "
+        "WITH d, [(x)-[r]->(d) | [type(r), x:Vulnerability, x.cveId]] AS ins, "
+        "     CASE WHEN d:KevEntry THEN 'HAS_KEV_ENTRY' "
+        "          WHEN d:EpssScore THEN 'HAS_EPSS' ELSE 'HAS_SSVC' END AS expected "
+        "WHERE size(ins) <> 1 OR ins[0][0] <> expected OR NOT ins[0][1] "
+        "   OR ins[0][2] <> d.cveId "
+        "RETURN count(d) AS n",
+        "Every KevEntry / EpssScore / SsvcDecision has exactly one incoming edge, its "
+        "has_* edge, from the Vulnerability with the same cveId",
+    ),
+    (
+        "decision_no_chain_edges",
+        "MATCH (d)-[r]-(x) WHERE (d:KevEntry OR d:EpssScore OR d:SsvcDecision) "
+        "  AND NOT (x:Vulnerability AND endNode(r) = d "
+        "           AND type(r) IN ['HAS_KEV_ENTRY', 'HAS_EPSS', 'HAS_SSVC']) "
+        "RETURN count(DISTINCT r) AS n",
+        "No edge between a decision leaf and anything but its Vulnerability: nothing "
+        "leaves a leaf, no chain standard touches one (KEV cwes never CAUSED_BY)",
+    ),
+    (
+        "kev_one_per_vulnerability",
+        "MATCH (v:Vulnerability)-[:HAS_KEV_ENTRY]->(:KevEntry) "
+        "WITH v, count(*) AS c WHERE c > 1 RETURN count(v) AS n",
+        "At most one HAS_KEV_ENTRY per Vulnerability",
+    ),
+    (
+        "epss_one_per_cve_date",
+        "MATCH (e:EpssScore) WITH e.cveId AS cve, e.scoreDate AS day, count(*) AS c "
+        "WHERE c > 1 RETURN count(*) AS n",
+        "One EpssScore per (cveId, scoreDate)",
+    ),
+    (
+        "epss_values",
+        "MATCH (e:EpssScore) "
+        "WHERE NOT (0.0 <= e.score <= 1.0) OR NOT (0.0 <= e.percentile <= 1.0) "
+        "   OR e.modelVersion IS NULL OR e.epssId <> e.cveId + '::EPSS::' + e.scoreDate "
+        "RETURN count(e) AS n",
+        "EpssScore score / percentile in [0, 1], modelVersion present, epssId = <cve>::EPSS::<scoreDate>",
+    ),
+    (
+        "ssvc_values",
+        "MATCH (s:SsvcDecision) "
+        "WHERE s.sourceRole <> 'adp' OR s.version <> '2.0.3' "
+        "   OR NOT s.exploitation IN ['none', 'poc', 'active'] "
+        "   OR NOT s.automatable IN ['no', 'yes'] "
+        "   OR NOT s.technicalImpact IN ['partial', 'total'] "
+        "   OR s.ssvcId <> s.cveId + '::SSVC::' + s.timestamp "
+        "RETURN count(s) AS n",
+        "SsvcDecision: sourceRole adp, version 2.0.3, decision-point vocabularies, "
+        "ssvcId = <cve>::SSVC::<timestamp>",
+    ),
+    # --- spec 1.2.1: ATLAS module (ADR-0004, atlas.shacl.ttl v1.1) ---
+    (
+        "atlas_boundary",
+        "MATCH (a)-[r]-(b) "
+        "WHERE any(l IN labels(a) WHERE l STARTS WITH 'Atlas') "
+        "  AND NOT any(l IN labels(b) WHERE l STARTS WITH 'Atlas') "
+        "  AND NOT (type(r) = 'ADAPTED_FROM' AND startNode(r) = a) "
+        "RETURN count(DISTINCT r) AS n",
+        "No edge between an ATLAS node and a non-ATLAS node except outgoing ADAPTED_FROM",
+    ),
+    (
+        "atlas_no_attck_hierarchy_types",
+        "MATCH (a)-[r:PART_OF|SUBTECHNIQUE_OF]-() "
+        "WHERE any(l IN labels(a) WHERE l STARTS WITH 'Atlas') RETURN count(r) AS n",
+        "No ATLAS node touches PART_OF / SUBTECHNIQUE_OF (ATT&CK-only; ATLAS uses "
+        "ACHIEVES / SPECIALIZES since spec 1.2.1)",
+    ),
+    (
+        "adapted_from_targets",
+        "MATCH (a)-[r:ADAPTED_FROM]->(t) "
+        "WHERE NOT (a:AtlasTechnique OR a:AtlasSubTechnique) "
+        "   OR NOT (t:Technique OR t:SubTechnique) "
+        "RETURN count(r) AS n",
+        "ADAPTED_FROM runs from an ATLAS technique / sub-technique to an existing "
+        "ATT&CK Technique / SubTechnique only",
+    ),
+    (
+        "adapted_from_provenance",
+        "MATCH ()-[r:ADAPTED_FROM]->() "
+        "WHERE coalesce(r.sourceField, '') <> 'attack-reference' "
+        "   OR r.attackReferenceId IS NULL OR r.attackReferenceUrl IS NULL "
+        "RETURN count(r) AS n",
+        "Every ADAPTED_FROM carries sourceField / attackReferenceId / attackReferenceUrl",
+    ),
+    (
+        "adapted_from_at_most_one",
+        "MATCH (a)-[:ADAPTED_FROM]->() WITH a, count(*) AS c WHERE c > 1 RETURN count(a) AS n",
+        "At most one ADAPTED_FROM per ATLAS node (attack-reference is single-valued)",
+    ),
+    (
+        "atlas_technique_achieves",
+        "MATCH (t) WHERE (t:AtlasTechnique OR t:AtlasSubTechnique) "
+        "  AND NOT (t)-[:ACHIEVES]->(:AtlasTactic) RETURN count(t) AS n",
+        "Every ATLAS technique / sub-technique ACHIEVES at least one AtlasTactic",
+    ),
+    (
+        "atlas_subtechnique_specializes",
+        "MATCH (s:AtlasSubTechnique) "
+        "WITH s, [(s)-[:SPECIALIZES]->(p:AtlasTechnique) | p.atlasId] AS parents "
+        "WHERE size(parents) <> 1 OR NOT s.atlasId STARTS WITH parents[0] + '.' "
+        "RETURN count(s) AS n",
+        "Every AtlasSubTechnique SPECIALIZES exactly one AtlasTechnique, its id prefix",
+    ),
+    (
+        "atlas_mitigation_mitigates",
+        "MATCH (m:AtlasMitigation) WHERE NOT (m)-[:MITIGATES]->() RETURN count(m) AS n",
+        "Every AtlasMitigation MITIGATES at least one ATLAS technique",
+    ),
 ]
 
 _BUILD_METADATA_COUNT = "MATCH (b:BuildMetadata) RETURN count(b) AS n"

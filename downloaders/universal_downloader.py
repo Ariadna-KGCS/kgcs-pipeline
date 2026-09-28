@@ -56,6 +56,10 @@ class UniversalDownloader(AbstractDownloader):
             'engage': self._download_engage(),
             'd3fend': self._download_d3fend(),
             'shield': self._download_shield(),
+            # spec 1.2: decision extension (ADR-0003) and ATLAS (ADR-0004)
+            'kev': self._download_new('kev'),
+            'epss': self._download_new('epss'),
+            'atlas': self._download_new('atlas'),
         }
 
         successful = sum(1 for v in results.values() if v)
@@ -429,10 +433,26 @@ class UniversalDownloader(AbstractDownloader):
             self.log_error(f"D3FEND download failed: {e}")
             return False
 
+    # ==================== spec 1.2 sources ====================
+    def _download_new(self, key: str) -> bool:
+        """KEV / EPSS / ATLAS through their own downloader classes."""
+        from .cisa_kev import CisaKevDownloader
+        from .first_epss import FirstEpssDownloader
+        from .mitre_atlas import MitreAtlasDownloader
+
+        cls = {'kev': CisaKevDownloader, 'epss': FirstEpssDownloader,
+               'atlas': MitreAtlasDownloader}[key]
+        try:
+            return cls(str(self.output_dir), self.timeout, self.retries).download()
+        except Exception as e:
+            self.log_error(f"{key.upper()} download failed: {e}")
+            return False
+
     # ==================== VALIDATION ====================
     def validate(self) -> bool:
         """Validate all downloaded data."""
-        standards_to_check = ['CVE', 'CWE', 'CPE', 'CAPEC', 'ATTCK-STIX', 'CAR', 'ENGAGE', 'SHIELD', 'D3FEND']
+        standards_to_check = ['CVE', 'CWE', 'CPE', 'CAPEC', 'ATTCK-STIX', 'CAR', 'ENGAGE', 'SHIELD', 'D3FEND',
+                              'KEV', 'EPSS', 'ATLAS']
         valid_count = 0
 
         for standard in standards_to_check:

@@ -56,6 +56,15 @@ UNIQUE_CONSTRAINTS: List[tuple] = [
     ("EngagementConcept",     "activityId"),
     ("EngagementConcept",     "approachId"),
     ("EngagementConcept",     "goalId"),
+    # Decision extension (spec 1.2.0, ADR-0003): leaves on Vulnerability
+    ("KevEntry",              "cveId"),
+    ("EpssScore",             "epssId"),
+    ("SsvcDecision",          "ssvcId"),
+    # ATLAS module (spec 1.2.1, ADR-0004): atlasId unique per label
+    ("AtlasTactic",           "atlasId"),
+    ("AtlasTechnique",        "atlasId"),
+    ("AtlasSubTechnique",     "atlasId"),
+    ("AtlasMitigation",       "atlasId"),
 ]
 
 # ---------------------------------------------------------------------------
