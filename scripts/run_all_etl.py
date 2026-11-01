@@ -31,9 +31,9 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 # Make scripts/ importable when run directly
 # ---------------------------------------------------------------------------
-_SCRIPTS_DIR = Path(__file__).resolve().parent
-if str(_SCRIPTS_DIR) not in sys.path:
-    sys.path.insert(0, str(_SCRIPTS_DIR))
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
 from etl import Neo4jWriter
 from etl.init_constraints import run_constraints

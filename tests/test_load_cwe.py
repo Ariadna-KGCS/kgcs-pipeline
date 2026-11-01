@@ -110,7 +110,7 @@ def test_adp_role_duplicates_and_mixed_types():
 def test_declared_adp_list_matches_pinned_spec():
     mapping = Path(__file__).resolve().parents[1] / "spec" / "mappings" / "cve-to-owl-v1.0.md"
     if not mapping.exists():
-        pytest.skip("spec/ not materialized (run python sync_spec.py)")
+        pytest.skip("spec/ not materialized (run python scripts/sync_spec.py)")
     text = mapping.read_text(encoding="utf-8")
     declared = set(re.findall(r"^\| `([^`]+)` \| [^|]+\| `adp` \|", text, flags=re.M))
     assert declared, "ADP table not found in the pinned cve-to-owl mapping"

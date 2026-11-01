@@ -20,7 +20,7 @@ from typing import Optional
 from .base import AbstractDownloader
 from utils.http_client import HTTPClient
 
-from ingest_config import APIEndpoints
+from downloaders.ingest_config import APIEndpoints
 
 _DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 

@@ -23,10 +23,10 @@ jobs:
       - name: Materialize pinned kgcs-spec
         env:
           KGCS_SPEC_URL: https://github.com/Ariadna-KGCS/kgcs-spec.git
-        run: python sync_spec.py
+        run: python scripts/sync_spec.py
 
       - name: Confirm spec pin (belt-and-suspenders)
-        run: python sync_spec.py --check
+        run: python scripts/sync_spec.py --check
 
       - name: Run unit tests
         run: python -m pytest tests/ -q

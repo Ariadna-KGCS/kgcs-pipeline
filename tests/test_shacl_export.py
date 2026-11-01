@@ -26,7 +26,7 @@ CAPEC_C1 = {"consequenceId": "CAPEC-63-C1", "scopes": ["Confidentiality"],
 @pytest.fixture(scope="module")
 def shapes():
     if not SHAPES.exists():
-        pytest.skip("spec/ not materialized (run python sync_spec.py)")
+        pytest.skip("spec/ not materialized (run python scripts/sync_spec.py)")
     return shapes_graph(SHAPES)
 
 

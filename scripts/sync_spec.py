@@ -6,7 +6,7 @@ local hand-edits to spec/ can never survive. Run this before any validation
 or test run (CI must run it unconditionally).
 
 Usage:
-    python sync_spec.py [--url URL] [--check]
+    python scripts/sync_spec.py [--url URL] [--check]
 
 Options:
     --url URL   Git URL/path of kgcs-spec. Defaults to $KGCS_SPEC_URL,
@@ -24,7 +24,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parent.parent   # repo root (this file lives in scripts/)
 SPEC_DIR = ROOT / "spec"
 PIN_FILE = SPEC_DIR / ".pin"
 
@@ -43,7 +43,7 @@ def read_tag() -> str:
 
 def check(tag: str) -> int:
     if not PIN_FILE.exists():
-        print(f"CHECK FAIL: {PIN_FILE} missing — run `python sync_spec.py`")
+        print(f"CHECK FAIL: {PIN_FILE} missing — run `python scripts/sync_spec.py`")
         return 1
     pinned = PIN_FILE.read_text(encoding="utf-8").split()
     if not pinned or pinned[0] != tag:

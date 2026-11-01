@@ -4,7 +4,7 @@ MITRE ATLAS downloader (spec 1.2.1, ADR-0004).
 Fetches the versioned YAML dist/v6/ATLAS-<release>.yaml (format 6.0.0) from
 mitre-atlas/atlas-data to data/raw/ATLAS/, never dist/ATLAS-latest.yaml (a
 moving symlink), so BuildMetadata names what was loaded. The release is
-pinned in ingest_config.APIEndpoints.atlas_release; --release overrides it.
+pinned in downloaders.ingest_config.APIEndpoints.atlas_release; --release overrides it.
 The STIX bundle is a release asset, not a dist/ file, and is not used.
 
 Usage (from the repo root):
@@ -20,7 +20,7 @@ import yaml
 from .base import AbstractDownloader
 from utils.http_client import HTTPClient
 
-from ingest_config import APIEndpoints
+from downloaders.ingest_config import APIEndpoints
 
 
 class MitreAtlasDownloader(AbstractDownloader):

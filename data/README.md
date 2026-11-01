@@ -6,8 +6,8 @@ the official sources.
 
 ```text
 data/
-├── raw/       ← python download.py --standard all      (the datasets, ~GBs)
-└── schemas/   ← python download_schemas.py             (official schema defs, small)
+├── raw/       ← python scripts/download.py --standard all      (the datasets, ~GBs)
+└── schemas/   ← python scripts/download_schemas.py             (official schema defs, small)
 ```
 
 - `raw/` is what the ETL (`run_all_etl.py`) consumes.
@@ -25,9 +25,9 @@ Ontology mappings, OWL modules, and SHACL shapes are **not** here: they are
 
 ## Sources per standard
 
-All URLs live in `ingest_config.py` (`APIEndpoints`) — single source of
+All URLs live in `downloaders/ingest_config.py` (`APIEndpoints`) — single source of
 truth. This table is the human-readable view of it.
-`download_config.yaml` is an *optional* overrides file (`--config`): timeouts,
+`config/download_config.yaml` is an *optional* overrides file (`--config`): timeouts,
 retries, output dir and which standards to enable. It holds no URLs.
 
 | Standard | Raw data (download.py) | Official schema (download_schemas.py) |
@@ -44,7 +44,7 @@ retries, output dir and which standards to enable. It holds no URLs.
 | ENGAGE | JSON exports from [mitre/engage](https://github.com/mitre/engage) | — no schema published |
 | SHIELD | Static JSON dumps from [MITRECND/mitrecnd.github.io](https://github.com/MITRECND/mitrecnd.github.io) (retired SHIELD site) | — no schema published |
 
-`python download_schemas.py --list` prints this same schema inventory,
+`python scripts/download_schemas.py --list` prints this same schema inventory,
 including the no-machine-schema reasons.
 
 ---
@@ -76,8 +76,8 @@ raw/SHIELD/*.json
 ## Reproducing from zero
 
 ```bash
-python download.py --standard all        # raw datasets (~GBs, be patient)
-python download_schemas.py               # official schema definitions
+python scripts/download.py --standard all        # raw datasets (~GBs, be patient)
+python scripts/download_schemas.py               # official schema definitions
 ```
 
 Both are idempotent and re-runnable per standard

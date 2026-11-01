@@ -25,7 +25,7 @@ def _shape_in_lists(shape_file: str, node_shape: str) -> dict:
     from rdflib.collection import Collection
 
     if not (SHAPES / shape_file).exists():
-        pytest.skip("spec/ not materialized (run python sync_spec.py)")
+        pytest.skip("spec/ not materialized (run python scripts/sync_spec.py)")
     SH = Namespace("http://www.w3.org/ns/shacl#")
     g = Graph().parse(str(SHAPES / shape_file), format="turtle")
     out = {}

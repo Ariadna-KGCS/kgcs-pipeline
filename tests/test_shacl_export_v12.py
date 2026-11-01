@@ -45,7 +45,7 @@ ADAPTED = [{"src": "AML.T0073", "tgt": "T1684.001", "tgtLabel": "SubTechnique",
 @pytest.fixture(scope="module")
 def shapes():
     if not SHAPES.exists():
-        pytest.skip("spec/ not materialized (run python sync_spec.py)")
+        pytest.skip("spec/ not materialized (run python scripts/sync_spec.py)")
     return shapes_graph(SHAPES)
 
 

@@ -8,9 +8,9 @@ Downloads raw data for 10 cybersecurity standards from NIST and MITRE:
 - CAR, ENGAGE, SHIELD (from MITRE frameworks)
 
 Usage:
-    python download.py --standard all --validate
-    python download.py --standard cve --output-report
-    python download.py --standard attck --config config.yaml
+    python scripts/download.py --standard all --validate
+    python scripts/download.py --standard cve --output-report
+    python scripts/download.py --standard attck --config config.yaml
 """
 
 import argparse
@@ -21,8 +21,8 @@ import yaml
 from pathlib import Path
 from datetime import datetime
 
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent))
+# Repo root on sys.path (this file lives in scripts/); data/raw stays CWD-relative: run from the repo root.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 # Import the improved universal downloader
 from downloaders.universal_downloader import UniversalDownloader
@@ -188,16 +188,16 @@ def main():
         epilog="""
 Examples:
   # Download all standards
-  python download.py --standard all --validate
+  python scripts/download.py --standard all --validate
 
   # Download specific standards
-  python download.py --standard cve,attck --validate
+  python scripts/download.py --standard cve,attck --validate
 
   # Download with configuration file
-  python download.py --standard all --config download_config.yaml
+  python scripts/download.py --standard all --config config/download_config.yaml
 
   # Download and generate report
-  python download.py --standard all --output-report data/raw/.metadata/download-report
+  python scripts/download.py --standard all --output-report data/raw/.metadata/download-report
         """
     )
 

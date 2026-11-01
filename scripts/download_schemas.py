@@ -7,14 +7,14 @@ raw-data contracts can be diffed when an upstream version bumps (e.g.
 CWE 4.19.1 -> 4.20). Complements download.py, which fetches the data
 but not the schemas.
 
-Sources come from ingest_config.APIEndpoints — single source of truth
+Sources come from downloaders.ingest_config.APIEndpoints — single source of truth
 for URLs; add new schema endpoints there, then register them in
 SCHEMA_SOURCES below.
 
 Usage:
-    python download_schemas.py                 # download all
-    python download_schemas.py --standard cwe  # one standard
-    python download_schemas.py --list          # show sources, no download
+    python scripts/download_schemas.py                 # download all
+    python scripts/download_schemas.py --standard cwe  # one standard
+    python scripts/download_schemas.py --list          # show sources, no download
 
 Output layout (mirrors data/raw/ naming):
     data/schemas/CWE/cwe_schema_latest.xsd
@@ -39,7 +39,9 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-from ingest_config import APIEndpoints
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # repo root
+
+from downloaders.ingest_config import APIEndpoints
 from utils.http_client import HTTPClient
 
 logger = logging.getLogger("download_schemas")

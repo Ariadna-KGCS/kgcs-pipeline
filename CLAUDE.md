@@ -5,7 +5,7 @@ This repo builds the KGCS Neo4j graph. It consumes the KGCS standard from `kgcs-
 ## Spec Pin
 
 - `SPEC_VERSION` holds the pinned `kgcs-spec` release tag (without the `v` prefix).
-- Materialize it locally: `python sync_spec.py` (idempotent; wipes and rebuilds the gitignored `spec/` from the tag; `--check` verifies without syncing). CI runs it unconditionally before tests so no result can depend on a hand-edited copy.
+- Materialize it locally: `python scripts/sync_spec.py` (idempotent; wipes and rebuilds the gitignored `spec/` from the tag; `--check` verifies without syncing). CI runs it unconditionally before tests so no result can depend on a hand-edited copy.
 - Never read spec artifacts from a sibling checkout's working tree; only from the pinned materialization.
 - Upgrading the pin is an explicit, reviewed change: bump `SPEC_VERSION`, re-run full validation.
 
@@ -21,7 +21,7 @@ This repo builds the KGCS Neo4j graph. It consumes the KGCS standard from `kgcs-
 
 ## Layout
 
-Entrypoints at repo root (`download.py`, `run_all_etl.py`) with packages `downloaders/`, `etl/`, `validation/`, `utils/`. Paths like `data/raw` are CWD-relative: always run from the repo root.
+Entrypoints in `scripts/` (`download.py`, `download_schemas.py`, `run_all_etl.py`, `sync_spec.py`) with packages `downloaders/`, `etl/`, `validation/`, `utils/`. Paths like `data/raw` are CWD-relative: always run from the repo root.
 
 ## Verification
 

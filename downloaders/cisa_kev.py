@@ -2,7 +2,7 @@
 CISA Known Exploited Vulnerabilities downloader (spec 1.2.0, ADR-0003).
 
 Fetches the JSON feed (not the CSV twin) to data/raw/KEV/.
-Schema: data/schemas/KEV/ (python download_schemas.py --standard kev).
+Schema: data/schemas/KEV/ (python scripts/download_schemas.py --standard kev).
 
 Usage (from the repo root):
     python -m downloaders.cisa_kev [--output-dir data/raw]
@@ -15,7 +15,7 @@ from pathlib import Path
 from .base import AbstractDownloader
 from utils.http_client import HTTPClient
 
-from ingest_config import APIEndpoints
+from downloaders.ingest_config import APIEndpoints
 
 KEV_FILE = "known_exploited_vulnerabilities.json"
 

@@ -21,13 +21,13 @@ loaders.
 
 ```powershell
 git status --short                       # clean tree, on the branch you mean to build from
-python sync_spec.py --check              # spec pin materialized and matching SPEC_VERSION
+python scripts/sync_spec.py --check              # spec pin materialized and matching SPEC_VERSION
 python -m pytest tests -q                # all green
 
 # Snapshot the previous raw data OUTSIDE the repo, then start empty
 Move-Item data\raw <local-archive>\raw-<previous-date>
 New-Item -ItemType Directory data\raw | Out-Null
-python download.py --standard all 2>&1 | Out-File -Encoding utf8 <run-dir>\download.log
+python scripts/download.py --standard all 2>&1 | Out-File -Encoding utf8 <run-dir>\download.log
 ```
 
 Gate — every standard has files dated today, and exactly one CWE and one
@@ -89,8 +89,8 @@ the system code page) and follow them from a second window with
 
 ```powershell
 $env:NEO4J_DATABASE = '<database>'       # session only; .env keeps pointing at the reference db
-python run_all_etl.py --dry-run          # lists every step and the target database
-python run_all_etl.py 2>&1 | Out-File -Encoding utf8 <run-dir>\etl.log
+python scripts/run_all_etl.py --dry-run          # lists every step and the target database
+python scripts/run_all_etl.py 2>&1 | Out-File -Encoding utf8 <run-dir>\etl.log
 ```
 
 Gate — last lines read `STEP N/N: build_metadata` and

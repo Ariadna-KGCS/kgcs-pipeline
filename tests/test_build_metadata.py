@@ -178,7 +178,7 @@ def test_run_build_metadata_merges_a_single_node(tmp_path: Path):
 
 def test_build_record_conforms_to_pinned_build_shape(tmp_path: Path):
     if not (SHAPES / "build.shacl.ttl").exists():
-        pytest.skip("spec/ not materialized (run python sync_spec.py)")
+        pytest.skip("spec/ not materialized (run python scripts/sync_spec.py)")
     from validation.shacl_export_check import shapes_graph, to_rdf, validate
 
     record, _, _ = bm.build_record(_raw_tree(tmp_path / "raw"))

@@ -23,7 +23,7 @@ class UniversalDownloader(AbstractDownloader):
 
     # Import centralized endpoints
     try:
-        from ingest_config import APIEndpoints, USER_AGENT
+        from downloaders.ingest_config import APIEndpoints, USER_AGENT
     except ImportError:
         # Fallback definitions
         APIEndpoints = type('APIEndpoints', (), {})()
