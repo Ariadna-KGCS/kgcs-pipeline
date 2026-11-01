@@ -27,6 +27,8 @@ Ontology mappings, OWL modules, and SHACL shapes are **not** here: they are
 
 All URLs live in `ingest_config.py` (`APIEndpoints`) — single source of
 truth. This table is the human-readable view of it.
+`download_config.yaml` is an *optional* overrides file (`--config`): timeouts,
+retries, output dir and which standards to enable. It holds no URLs.
 
 | Standard | Raw data (download.py) | Official schema (download_schemas.py) |
 | -------- | ---------------------- | ------------------------------------- |
