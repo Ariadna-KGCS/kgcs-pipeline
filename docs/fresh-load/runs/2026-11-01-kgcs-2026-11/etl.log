@@ -1,0 +1,396 @@
+2026-11-01T19:47:08 INFO     etl.neo4j_writer: Neo4jWriter connected to bolt://localhost:7687 (database=kgcs-2026-11)
+2026-11-01T19:47:08 INFO     run_all_etl: ============================================================
+2026-11-01T19:47:08 INFO     run_all_etl: STEP 1/16: constraints
+2026-11-01T19:47:08 INFO     run_all_etl: ============================================================
+2026-11-01T19:47:08 INFO     etl.init_constraints: Applying Neo4j unique constraints...
+2026-11-01T19:47:10 INFO     etl.init_constraints:   Ô£ô UNIQUE constraint: Platform.cpeUri
+2026-11-01T19:47:10 INFO     etl.init_constraints:   Ô£ô UNIQUE constraint: Platform.cpeNameId
+2026-11-01T19:47:10 INFO     etl.init_constraints:   Ô£ô UNIQUE constraint: PlatformConfiguration.matchCriteriaId
+2026-11-01T19:47:10 INFO     etl.init_constraints:   Ô£ô UNIQUE constraint: Vulnerability.cveId
+2026-11-01T19:47:10 INFO     etl.init_constraints:   Ô£ô UNIQUE constraint: VulnerabilityConfiguration.vcId
+2026-11-01T19:47:10 INFO     etl.init_constraints:   Ô£ô UNIQUE constraint: VulnerabilityConfigurationNode.vcnId
+2026-11-01T19:47:11 INFO     etl.init_constraints:   Ô£ô UNIQUE constraint: Score.scoreId
+2026-11-01T19:47:11 INFO     etl.init_constraints:   Ô£ô UNIQUE constraint: Reference.referenceUrl
+2026-11-01T19:47:11 INFO     etl.init_constraints:   Ô£ô UNIQUE constraint: Weakness.cweId
+2026-11-01T19:47:11 INFO     etl.init_constraints:   Ô£ô UNIQUE constraint: AttackPattern.capecId
+2026-11-01T19:47:11 INFO     etl.init_constraints:   Ô£ô UNIQUE constraint: Consequence.consequenceId
+2026-11-01T19:47:11 INFO     etl.init_constraints:   Ô£ô UNIQUE constraint: Technique.attackId
+2026-11-01T19:47:11 INFO     etl.init_constraints:   Ô£ô UNIQUE constraint: SubTechnique.attackId
+2026-11-01T19:47:11 INFO     etl.init_constraints:   Ô£ô UNIQUE constraint: Tactic.attackId
+2026-11-01T19:47:11 INFO     etl.init_constraints:   Ô£ô UNIQUE constraint: DefensiveTechnique.d3fendId
+2026-11-01T19:47:12 INFO     etl.init_constraints:   Ô£ô UNIQUE constraint: DetectionAnalytic.analyticId
+2026-11-01T19:47:12 INFO     etl.init_constraints:   Ô£ô UNIQUE constraint: DeceptionTechnique.techniqueId
+2026-11-01T19:47:12 INFO     etl.init_constraints:   Ô£ô UNIQUE constraint: EngagementConcept.activityId
+2026-11-01T19:47:12 INFO     etl.init_constraints:   Ô£ô UNIQUE constraint: EngagementConcept.approachId
+2026-11-01T19:47:12 INFO     etl.init_constraints:   Ô£ô UNIQUE constraint: EngagementConcept.goalId
+2026-11-01T19:47:12 INFO     etl.init_constraints:   Ô£ô UNIQUE constraint: KevEntry.cveId
+2026-11-01T19:47:12 INFO     etl.init_constraints:   Ô£ô UNIQUE constraint: EpssScore.epssId
+2026-11-01T19:47:12 INFO     etl.init_constraints:   Ô£ô UNIQUE constraint: SsvcDecision.ssvcId
+2026-11-01T19:47:12 INFO     etl.init_constraints:   Ô£ô UNIQUE constraint: AtlasTactic.atlasId
+2026-11-01T19:47:13 INFO     etl.init_constraints:   Ô£ô UNIQUE constraint: AtlasTechnique.atlasId
+2026-11-01T19:47:13 INFO     etl.init_constraints:   Ô£ô UNIQUE constraint: AtlasSubTechnique.atlasId
+2026-11-01T19:47:13 INFO     etl.init_constraints:   Ô£ô UNIQUE constraint: AtlasMitigation.atlasId
+2026-11-01T19:47:13 INFO     etl.init_constraints: Applying Neo4j lookup indexes...
+2026-11-01T19:47:13 INFO     etl.init_constraints:   Ô£ô INDEX: Tactic.phaseName
+2026-11-01T19:47:13 INFO     etl.init_constraints:   Ô£ô INDEX: Vulnerability.published
+2026-11-01T19:47:13 INFO     etl.init_constraints:   Ô£ô INDEX: Score.version
+2026-11-01T19:47:13 INFO     etl.init_constraints: Constraints complete: 30/30 applied, 0 errors.
+2026-11-01T19:47:13 INFO     run_all_etl: [constraints] SUCCESS ÔÇö stats: {}
+2026-11-01T19:47:13 INFO     run_all_etl: ============================================================
+2026-11-01T19:47:13 INFO     run_all_etl: STEP 2/16: cpe
+2026-11-01T19:47:13 INFO     run_all_etl: ============================================================
+2026-11-01T19:47:13 INFO     CPELoader: [CPE] Ô£ô Starting CPE ETL (streaming mode)
+2026-11-01T19:47:13 INFO     etl.load_cpe: [CPE] Platform: nvdcpe-2.0-chunk-00001.json (1/18, 5%)
+2026-11-01T19:47:31 INFO     etl.load_cpe: [CPE] Platform: nvdcpe-2.0-chunk-00002.json (2/18, 11%)
+2026-11-01T19:47:48 INFO     etl.load_cpe: [CPE] Platform: nvdcpe-2.0-chunk-00003.json (3/18, 16%)
+2026-11-01T19:48:02 INFO     etl.load_cpe: [CPE] Platform: nvdcpe-2.0-chunk-00004.json (4/18, 22%)
+2026-11-01T19:48:17 INFO     etl.load_cpe: [CPE] Platform: nvdcpe-2.0-chunk-00005.json (5/18, 27%)
+2026-11-01T19:48:31 INFO     etl.load_cpe: [CPE] Platform: nvdcpe-2.0-chunk-00006.json (6/18, 33%)
+2026-11-01T19:48:46 INFO     etl.load_cpe: [CPE] Platform: nvdcpe-2.0-chunk-00007.json (7/18, 38%)
+2026-11-01T19:49:00 INFO     etl.load_cpe: [CPE] Platform: nvdcpe-2.0-chunk-00008.json (8/18, 44%)
+2026-11-01T19:49:15 INFO     etl.load_cpe: [CPE] Platform: nvdcpe-2.0-chunk-00009.json (9/18, 50%)
+2026-11-01T19:49:30 INFO     etl.load_cpe: [CPE] Platform: nvdcpe-2.0-chunk-00010.json (10/18, 55%)
+2026-11-01T19:49:44 INFO     etl.load_cpe: [CPE] Platform: nvdcpe-2.0-chunk-00011.json (11/18, 61%)
+2026-11-01T19:50:08 INFO     etl.load_cpe: [CPE] Platform: nvdcpe-2.0-chunk-00012.json (12/18, 66%)
+2026-11-01T19:50:33 INFO     etl.load_cpe: [CPE] Platform: nvdcpe-2.0-chunk-00013.json (13/18, 72%)
+2026-11-01T19:50:56 INFO     etl.load_cpe: [CPE] Platform: nvdcpe-2.0-chunk-00014.json (14/18, 77%)
+2026-11-01T19:51:24 INFO     etl.load_cpe: [CPE] Platform: nvdcpe-2.0-chunk-00015.json (15/18, 83%)
+2026-11-01T19:51:49 INFO     etl.load_cpe: [CPE] Platform: nvdcpe-2.0-chunk-00016.json (16/18, 88%)
+2026-11-01T19:52:13 INFO     etl.load_cpe: [CPE] Platform: nvdcpe-2.0-chunk-00017.json (17/18, 94%)
+2026-11-01T19:52:36 INFO     etl.load_cpe: [CPE] Platform: nvdcpe-2.0-chunk-00018.json (18/18, 100%)
+2026-11-01T19:52:43 INFO     CPELoader: [CPE] Ô£ô Platform nodes done: 18 files, 1866213 nodes created
+2026-11-01T19:52:43 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00001.json (1/74, 1%)
+2026-11-01T19:52:54 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00002.json (2/74, 2%)
+2026-11-01T19:53:06 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00003.json (3/74, 4%)
+2026-11-01T19:53:20 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00004.json (4/74, 5%)
+2026-11-01T19:53:31 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00005.json (5/74, 6%)
+2026-11-01T19:53:44 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00006.json (6/74, 8%)
+2026-11-01T19:53:49 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00007.json (7/74, 9%)
+2026-11-01T19:53:53 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00008.json (8/74, 10%)
+2026-11-01T19:53:58 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00009.json (9/74, 12%)
+2026-11-01T19:54:03 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00010.json (10/74, 13%)
+2026-11-01T19:54:06 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00011.json (11/74, 14%)
+2026-11-01T19:54:11 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00012.json (12/74, 16%)
+2026-11-01T19:54:15 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00013.json (13/74, 17%)
+2026-11-01T19:54:19 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00014.json (14/74, 18%)
+2026-11-01T19:54:24 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00015.json (15/74, 20%)
+2026-11-01T19:54:29 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00016.json (16/74, 21%)
+2026-11-01T19:54:34 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00017.json (17/74, 22%)
+2026-11-01T19:54:37 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00018.json (18/74, 24%)
+2026-11-01T19:54:41 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00019.json (19/74, 25%)
+2026-11-01T19:54:45 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00020.json (20/74, 27%)
+2026-11-01T19:54:48 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00021.json (21/74, 28%)
+2026-11-01T19:54:50 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00022.json (22/74, 29%)
+2026-11-01T19:54:54 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00023.json (23/74, 31%)
+2026-11-01T19:54:57 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00024.json (24/74, 32%)
+2026-11-01T19:54:59 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00025.json (25/74, 33%)
+2026-11-01T19:55:01 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00026.json (26/74, 35%)
+2026-11-01T19:55:03 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00027.json (27/74, 36%)
+2026-11-01T19:55:05 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00028.json (28/74, 37%)
+2026-11-01T19:55:07 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00029.json (29/74, 39%)
+2026-11-01T19:55:09 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00030.json (30/74, 40%)
+2026-11-01T19:55:11 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00031.json (31/74, 41%)
+2026-11-01T19:55:12 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00032.json (32/74, 43%)
+2026-11-01T19:55:13 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00033.json (33/74, 44%)
+2026-11-01T19:55:13 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00034.json (34/74, 45%)
+2026-11-01T19:55:14 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00035.json (35/74, 47%)
+2026-11-01T19:55:15 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00036.json (36/74, 48%)
+2026-11-01T19:55:16 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00037.json (37/74, 50%)
+2026-11-01T19:55:18 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00038.json (38/74, 51%)
+2026-11-01T19:55:18 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00039.json (39/74, 52%)
+2026-11-01T19:55:19 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00040.json (40/74, 54%)
+2026-11-01T19:55:20 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00041.json (41/74, 55%)
+2026-11-01T19:55:20 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00042.json (42/74, 56%)
+2026-11-01T19:55:21 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00043.json (43/74, 58%)
+2026-11-01T19:55:22 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00044.json (44/74, 59%)
+2026-11-01T19:55:23 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00045.json (45/74, 60%)
+2026-11-01T19:55:25 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00046.json (46/74, 62%)
+2026-11-01T19:55:26 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00047.json (47/74, 63%)
+2026-11-01T19:55:28 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00048.json (48/74, 64%)
+2026-11-01T19:55:29 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00049.json (49/74, 66%)
+2026-11-01T19:55:31 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00050.json (50/74, 67%)
+2026-11-01T19:55:32 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00051.json (51/74, 68%)
+2026-11-01T19:55:33 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00052.json (52/74, 70%)
+2026-11-01T19:55:34 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00053.json (53/74, 71%)
+2026-11-01T19:55:36 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00054.json (54/74, 72%)
+2026-11-01T19:55:39 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00055.json (55/74, 74%)
+2026-11-01T19:55:41 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00056.json (56/74, 75%)
+2026-11-01T19:55:43 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00057.json (57/74, 77%)
+2026-11-01T19:55:45 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00058.json (58/74, 78%)
+2026-11-01T19:55:46 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00059.json (59/74, 79%)
+2026-11-01T19:55:48 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00060.json (60/74, 81%)
+2026-11-01T19:55:48 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00061.json (61/74, 82%)
+2026-11-01T19:55:49 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00062.json (62/74, 83%)
+2026-11-01T19:55:49 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00063.json (63/74, 85%)
+2026-11-01T19:55:49 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00064.json (64/74, 86%)
+2026-11-01T19:55:50 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00065.json (65/74, 87%)
+2026-11-01T19:55:50 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00066.json (66/74, 89%)
+2026-11-01T19:55:50 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00067.json (67/74, 90%)
+2026-11-01T19:55:51 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00068.json (68/74, 91%)
+2026-11-01T19:55:52 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00069.json (69/74, 93%)
+2026-11-01T19:55:53 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00070.json (70/74, 94%)
+2026-11-01T19:55:53 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00071.json (71/74, 95%)
+2026-11-01T19:55:54 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00072.json (72/74, 97%)
+2026-11-01T19:55:55 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00073.json (73/74, 98%)
+2026-11-01T19:55:55 INFO     etl.load_cpe: [CPE] PlatformConfiguration: nvdcpematch-2.0-chunk-00074.json (74/74, 100%)
+2026-11-01T19:55:56 INFO     CPELoader: [CPE] Ô£ô PlatformConfiguration nodes done: 74 files, 672683 nodes created
+2026-11-01T19:55:56 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00001.json (1/74, 1%)
+2026-11-01T19:56:25 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00002.json (2/74, 2%)
+2026-11-01T19:56:53 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00003.json (3/74, 4%)
+2026-11-01T19:57:26 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00004.json (4/74, 5%)
+2026-11-01T19:58:01 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00005.json (5/74, 6%)
+2026-11-01T19:58:36 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00006.json (6/74, 8%)
+2026-11-01T19:59:16 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00007.json (7/74, 9%)
+2026-11-01T19:59:50 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00008.json (8/74, 10%)
+2026-11-01T20:00:25 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00009.json (9/74, 12%)
+2026-11-01T20:01:02 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00010.json (10/74, 13%)
+2026-11-01T20:01:42 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00011.json (11/74, 14%)
+2026-11-01T20:02:27 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00012.json (12/74, 16%)
+2026-11-01T20:03:10 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00013.json (13/74, 17%)
+2026-11-01T20:03:58 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00014.json (14/74, 18%)
+2026-11-01T20:04:52 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00015.json (15/74, 20%)
+2026-11-01T20:05:46 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00016.json (16/74, 21%)
+2026-11-01T20:06:37 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00017.json (17/74, 22%)
+2026-11-01T20:07:31 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00018.json (18/74, 24%)
+2026-11-01T20:08:26 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00019.json (19/74, 25%)
+2026-11-01T20:09:24 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00020.json (20/74, 27%)
+2026-11-01T20:10:27 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00021.json (21/74, 28%)
+2026-11-01T20:11:35 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00022.json (22/74, 29%)
+2026-11-01T20:12:38 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00023.json (23/74, 31%)
+2026-11-01T20:13:34 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00024.json (24/74, 32%)
+2026-11-01T20:14:19 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00025.json (25/74, 33%)
+2026-11-01T20:15:14 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00026.json (26/74, 35%)
+2026-11-01T20:16:07 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00027.json (27/74, 36%)
+2026-11-01T20:17:00 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00028.json (28/74, 37%)
+2026-11-01T20:18:06 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00029.json (29/74, 39%)
+2026-11-01T20:18:59 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00030.json (30/74, 40%)
+2026-11-01T20:19:40 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00031.json (31/74, 41%)
+2026-11-01T20:20:25 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00032.json (32/74, 43%)
+2026-11-01T20:21:08 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00033.json (33/74, 44%)
+2026-11-01T20:21:53 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00034.json (34/74, 45%)
+2026-11-01T20:22:48 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00035.json (35/74, 47%)
+2026-11-01T20:23:41 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00036.json (36/74, 48%)
+2026-11-01T20:24:43 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00037.json (37/74, 50%)
+2026-11-01T20:25:42 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00038.json (38/74, 51%)
+2026-11-01T20:26:39 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00039.json (39/74, 52%)
+2026-11-01T20:27:32 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00040.json (40/74, 54%)
+2026-11-01T20:28:27 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00041.json (41/74, 55%)
+2026-11-01T20:29:23 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00042.json (42/74, 56%)
+2026-11-01T20:30:23 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00043.json (43/74, 58%)
+2026-11-01T20:31:17 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00044.json (44/74, 59%)
+2026-11-01T20:32:07 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00045.json (45/74, 60%)
+2026-11-01T20:33:05 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00046.json (46/74, 62%)
+2026-11-01T20:34:09 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00047.json (47/74, 63%)
+2026-11-01T20:35:02 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00048.json (48/74, 64%)
+2026-11-01T20:36:00 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00049.json (49/74, 66%)
+2026-11-01T20:37:01 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00050.json (50/74, 67%)
+2026-11-01T20:38:02 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00051.json (51/74, 68%)
+2026-11-01T20:38:48 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00052.json (52/74, 70%)
+2026-11-01T20:39:31 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00053.json (53/74, 71%)
+2026-11-01T20:40:16 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00054.json (54/74, 72%)
+2026-11-01T20:40:59 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00055.json (55/74, 74%)
+2026-11-01T20:41:40 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00056.json (56/74, 75%)
+2026-11-01T20:42:41 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00057.json (57/74, 77%)
+2026-11-01T20:43:38 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00058.json (58/74, 78%)
+2026-11-01T20:44:33 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00059.json (59/74, 79%)
+2026-11-01T20:45:25 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00060.json (60/74, 81%)
+2026-11-01T20:46:20 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00061.json (61/74, 82%)
+2026-11-01T20:47:03 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00062.json (62/74, 83%)
+2026-11-01T20:47:48 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00063.json (63/74, 85%)
+2026-11-01T20:48:35 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00064.json (64/74, 86%)
+2026-11-01T20:49:40 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00065.json (65/74, 87%)
+2026-11-01T20:50:27 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00066.json (66/74, 89%)
+2026-11-01T20:51:25 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00067.json (67/74, 90%)
+2026-11-01T20:52:17 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00068.json (68/74, 91%)
+2026-11-01T20:52:57 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00069.json (69/74, 93%)
+2026-11-01T20:53:49 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00070.json (70/74, 94%)
+2026-11-01T20:54:43 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00071.json (71/74, 95%)
+2026-11-01T20:55:36 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00072.json (72/74, 97%)
+2026-11-01T20:56:36 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00073.json (73/74, 98%)
+2026-11-01T20:57:25 INFO     etl.load_cpe: [CPE] MATCHES_PLATFORM: nvdcpematch-2.0-chunk-00074.json (74/74, 100%)
+2026-11-01T20:58:02 INFO     CPELoader: [CPE] Ô£ô MATCHES_PLATFORM relationships done: 31775150 created
+2026-11-01T20:58:02 INFO     CPELoader: [CPE] Ô£ô Complete: {'nodes_created': 2538896, 'rels_created': 31775150, 'platform_files': 18, 'match_files': 74}
+2026-11-01T20:58:02 INFO     run_all_etl: [cpe] SUCCESS ÔÇö stats: {'nodes_created': 2538896, 'rels_created': 31775150, 'platform_files': 18, 'match_files': 74}
+2026-11-01T20:58:02 INFO     run_all_etl: ============================================================
+2026-11-01T20:58:02 INFO     run_all_etl: STEP 3/16: cve
+2026-11-01T20:58:02 INFO     run_all_etl: ============================================================
+2026-11-01T20:58:02 INFO     CVELoader: [CVE] Ô£ô Starting CVE ETL (streaming mode)
+2026-11-01T20:58:02 INFO     etl.load_cve: [CVE] Processing nvdcve-2.0-modified.json (1/26, 3%)
+2026-11-01T20:58:58 INFO     etl.load_cve: [CVE] Processing nvdcve-2.0-2002.json (2/26, 7%)
+2026-11-01T20:59:22 INFO     etl.load_cve: [CVE] Processing nvdcve-2.0-2003.json (3/26, 11%)
+2026-11-01T20:59:29 INFO     etl.load_cve: [CVE] Processing nvdcve-2.0-2004.json (4/26, 15%)
+2026-11-01T20:59:46 INFO     etl.load_cve: [CVE] Processing nvdcve-2.0-2005.json (5/26, 19%)
+2026-11-01T21:00:12 INFO     etl.load_cve: [CVE] Processing nvdcve-2.0-2006.json (6/26, 23%)
+2026-11-01T21:00:45 INFO     etl.load_cve: [CVE] Processing nvdcve-2.0-2007.json (7/26, 26%)
+2026-11-01T21:00:55 INFO     etl.load_cve: [CVE] Processing nvdcve-2.0-2008.json (8/26, 30%)
+2026-11-01T21:01:07 INFO     etl.load_cve: [CVE] Processing nvdcve-2.0-2009.json (9/26, 34%)
+2026-11-01T21:01:29 INFO     etl.load_cve: [CVE] Processing nvdcve-2.0-2010.json (10/26, 38%)
+2026-11-01T21:02:06 INFO     etl.load_cve: [CVE] Processing nvdcve-2.0-2011.json (11/26, 42%)
+2026-11-01T21:02:44 INFO     etl.load_cve: [CVE] Processing nvdcve-2.0-2012.json (12/26, 46%)
+2026-11-01T21:03:29 INFO     etl.load_cve: [CVE] Processing nvdcve-2.0-2013.json (13/26, 50%)
+2026-11-01T21:04:26 INFO     etl.load_cve: [CVE] Processing nvdcve-2.0-2014.json (14/26, 53%)
+2026-11-01T21:05:04 INFO     etl.load_cve: [CVE] Processing nvdcve-2.0-2015.json (15/26, 57%)
+2026-11-01T21:05:45 INFO     etl.load_cve: [CVE] Processing nvdcve-2.0-2016.json (16/26, 61%)
+2026-11-01T21:06:45 INFO     etl.load_cve: [CVE] Processing nvdcve-2.0-2017.json (17/26, 65%)
+2026-11-01T21:08:08 INFO     etl.load_cve: [CVE] Processing nvdcve-2.0-2018.json (18/26, 69%)
+2026-11-01T21:09:28 INFO     etl.load_cve: [CVE] Processing nvdcve-2.0-2019.json (19/26, 73%)
+2026-11-01T21:10:48 INFO     etl.load_cve: [CVE] Processing nvdcve-2.0-2020.json (20/26, 76%)
+2026-11-01T21:12:26 INFO     etl.load_cve: [CVE] Processing nvdcve-2.0-2021.json (21/26, 80%)
+2026-11-01T21:14:23 INFO     etl.load_cve: [CVE] Processing nvdcve-2.0-2022.json (22/26, 84%)
+2026-11-01T21:16:26 INFO     etl.load_cve: [CVE] Processing nvdcve-2.0-2023.json (23/26, 88%)
+2026-11-01T21:19:05 INFO     etl.load_cve: [CVE] Processing nvdcve-2.0-2024.json (24/26, 92%)
+2026-11-01T21:21:55 INFO     etl.load_cve: [CVE] Processing nvdcve-2.0-2025.json (25/26, 96%)
+2026-11-01T21:23:37 INFO     etl.load_cve: [CVE] Processing nvdcve-2.0-2026.json (26/26, 100%)
+2026-11-01T21:25:44 INFO     CVELoader: [CVE] Ô£ô Complete: {'nodes_created': 3339362, 'rels_created': 9281356, 'files_processed': 26}
+2026-11-01T21:25:44 INFO     run_all_etl: [cve] SUCCESS ÔÇö stats: {'nodes_created': 3339362, 'rels_created': 9281356, 'files_processed': 26}
+2026-11-01T21:25:44 INFO     run_all_etl: ============================================================
+2026-11-01T21:25:44 INFO     run_all_etl: STEP 4/16: cvss
+2026-11-01T21:25:44 INFO     run_all_etl: ============================================================
+2026-11-01T21:25:44 INFO     CVSSLoader: [CVSS] Ô£ô Starting CVSS ETL (streaming mode)
+2026-11-01T21:29:19 INFO     CVSSLoader: [CVSS] Ô£ô Complete: {'nodes_created': 566912, 'rels_created': 566912, 'files_processed': 26}
+2026-11-01T21:29:19 INFO     run_all_etl: [cvss] SUCCESS ÔÇö stats: {'nodes_created': 566912, 'rels_created': 566912, 'files_processed': 26}
+2026-11-01T21:29:19 INFO     run_all_etl: ============================================================
+2026-11-01T21:29:19 INFO     run_all_etl: STEP 5/16: kev
+2026-11-01T21:29:19 INFO     run_all_etl: ============================================================
+2026-11-01T21:29:19 INFO     KEVLoader: [KEV] Ô£ô catalogVersion 2026.10.30, 1766 entries, 0 duplicate cveIDs
+2026-11-01T21:29:19 WARNING  KEVLoader: [KEV] ÔÜá 1 entries dropped (no Vulnerability node): CVE-2026-118527
+2026-11-01T21:29:20 INFO     KEVLoader: [KEV] Ô£ô Complete: {'nodes_created': 1765, 'rels_created': 1765, 'catalog_version': '2026.10.30', 'entries': 1766, 'loaded': 1765, 'dropped_no_vulnerability': 1}
+2026-11-01T21:29:20 INFO     run_all_etl: [kev] SUCCESS ÔÇö stats: {'nodes_created': 1765, 'rels_created': 1765, 'catalog_version': '2026.10.30', 'entries': 1766, 'loaded': 1765, 'dropped_no_vulnerability': 1}
+2026-11-01T21:29:20 INFO     run_all_etl: ============================================================
+2026-11-01T21:29:20 INFO     run_all_etl: STEP 6/16: epss
+2026-11-01T21:29:20 INFO     run_all_etl: ============================================================
+2026-11-01T21:29:20 INFO     EPSSLoader: [EPSS] Ô£ô epss_scores-2026-11-01.csv.gz: score_date 2026-11-01T12:00:16Z, model v2026.06.15
+2026-11-01T21:30:51 INFO     EPSSLoader: [EPSS] Ô£ô Complete: {'nodes_created': 398784, 'rels_created': 398784, 'rows': 398784, 'loaded': 398784, 'dropped_no_vulnerability': 0, 'files': ['epss_scores-2026-11-01.csv.gz:2026-11-01:v2026.06.15:398784'], 'skipped_files': [], 'epss_nodes_before': 0, 'epss_nodes_after': 398784}
+2026-11-01T21:30:51 INFO     run_all_etl: [epss] SUCCESS ÔÇö stats: {'nodes_created': 398784, 'rels_created': 398784, 'rows': 398784, 'loaded': 398784, 'dropped_no_vulnerability': 0, 'files': ['epss_scores-2026-11-01.csv.gz:2026-11-01:v2026.06.15:398784'], 'skipped_files': [], 'epss_nodes_before': 0, 'epss_nodes_after': 398784}
+2026-11-01T21:30:51 INFO     run_all_etl: ============================================================
+2026-11-01T21:30:51 INFO     run_all_etl: STEP 7/16: ssvc
+2026-11-01T21:30:51 INFO     run_all_etl: ============================================================
+2026-11-01T21:33:19 WARNING  SSVCLoader: [SSVC] ÔÜá dropped 1 entries: source:2fdefc65-d750-4b8d-96ee-6e2c0c42dbfe
+2026-11-01T21:33:19 WARNING  SSVCLoader: [SSVC] ÔÜá dropped 3 entries: source:2ffdacf6-8681-47df-b023-4f11abd61c1d
+2026-11-01T21:33:19 WARNING  SSVCLoader: [SSVC] ÔÜá dropped 7 entries: source:44488dab-36db-4358-99f9-bc116477f914
+2026-11-01T21:33:19 WARNING  SSVCLoader: [SSVC] ÔÜá dropped 37 entries: source:5a6e4751-2f3f-4070-9419-94fb35b644e8
+2026-11-01T21:33:19 WARNING  SSVCLoader: [SSVC] ÔÜá dropped 13 entries: source:87c8e6ad-f0f5-4ca8-89e2-89f26d6ed932
+2026-11-01T21:33:19 WARNING  SSVCLoader: [SSVC] ÔÜá dropped 184 entries: source:9119a7d8-5eab-497f-8521-727c672e3725
+2026-11-01T21:33:19 WARNING  SSVCLoader: [SSVC] ÔÜá dropped 14 entries: source:cve@takeonme.org
+2026-11-01T21:33:19 WARNING  SSVCLoader: [SSVC] ÔÜá dropped 27 entries: source:ics-cert@hq.dhs.gov
+2026-11-01T21:33:19 INFO     SSVCLoader: [SSVC] Ô£ô Complete: {'nodes_created': 210258, 'rels_created': 210258, 'files_processed': 26, 'adp_entries': 230383, 'duplicates_collapsed': 20125, 'loaded': 210258, 'dropped_no_vulnerability': 0, 'distinct_decisions': 210258, 'dropped': {'source:2fdefc65-d750-4b8d-96ee-6e2c0c42dbfe': 1, 'source:2ffdacf6-8681-47df-b023-4f11abd61c1d': 3, 'source:44488dab-36db-4358-99f9-bc116477f914': 7, 'source:5a6e4751-2f3f-4070-9419-94fb35b644e8': 37, 'source:87c8e6ad-f0f5-4ca8-89e2-89f26d6ed932': 13, 'source:9119a7d8-5eab-497f-8521-727c672e3725': 184, 'source:cve@takeonme.org': 14, 'source:ics-cert@hq.dhs.gov': 27}}
+2026-11-01T21:33:19 INFO     run_all_etl: [ssvc] SUCCESS ÔÇö stats: {'nodes_created': 210258, 'rels_created': 210258, 'files_processed': 26, 'adp_entries': 230383, 'duplicates_collapsed': 20125, 'loaded': 210258, 'dropped_no_vulnerability': 0, 'distinct_decisions': 210258, 'dropped': {'source:2fdefc65-d750-4b8d-96ee-6e2c0c42dbfe': 1, 'source:2ffdacf6-8681-47df-b023-4f11abd61c1d': 3, 'source:44488dab-36db-4358-99f9-bc116477f914': 7, 'source:5a6e4751-2f3f-4070-9419-94fb35b644e8': 37, 'source:87c8e6ad-f0f5-4ca8-89e2-89f26d6ed932': 13, 'source:9119a7d8-5eab-497f-8521-727c672e3725': 184, 'source:cve@takeonme.org': 14, 'source:ics-cert@hq.dhs.gov': 27}}
+2026-11-01T21:33:19 INFO     run_all_etl: ============================================================
+2026-11-01T21:33:19 INFO     run_all_etl: STEP 8/16: cwe
+2026-11-01T21:33:19 INFO     run_all_etl: ============================================================
+2026-11-01T21:33:19 INFO     CWELoader: [CWE] Ô£ô Starting CWE ETL
+2026-11-01T21:33:19 INFO     CWELoader: [CWE] Ô£ô CWE XML selected: cwec_v5.0.xml
+2026-11-01T21:33:19 INFO     etl.load_cwe: [CWE] Catalog namespace: http://cwe.mitre.org/cwe-8
+2026-11-01T21:33:21 INFO     CWELoader: [CWE] Ô£ô Weakness nodes: 984 written, 984 created
+2026-11-01T21:33:21 WARNING  CWELoader: [CWE] ÔÜá 3 consequence values outside the CWE vocabularies (loaded verbatim, SHACL flags them): CWE-1260-C1 impact 'DoS: Prevent Access'; CWE-1335-C2 impact 'Undefined Behavior'; CWE-1476-C1 impact 'DoS: Prevent Access'
+2026-11-01T21:33:23 INFO     CWELoader: [CWE] Ô£ô Consequence: 1278 records written (1278 nodes, 1278 HAS_CONSEQUENCE created, 0 stale nodes pruned)
+2026-11-01T21:33:23 INFO     etl.load_cwe: [CWE] Reading weaknesses from nvdcve-2.0-modified.json (1/26, 3%)
+2026-11-01T21:33:29 INFO     etl.load_cwe: [CWE] Reading weaknesses from nvdcve-2.0-2002.json (2/26, 7%)
+2026-11-01T21:33:29 INFO     etl.load_cwe: [CWE] Reading weaknesses from nvdcve-2.0-2003.json (3/26, 11%)
+2026-11-01T21:33:29 INFO     etl.load_cwe: [CWE] Reading weaknesses from nvdcve-2.0-2004.json (4/26, 15%)
+2026-11-01T21:33:30 INFO     etl.load_cwe: [CWE] Reading weaknesses from nvdcve-2.0-2005.json (5/26, 19%)
+2026-11-01T21:33:30 INFO     etl.load_cwe: [CWE] Reading weaknesses from nvdcve-2.0-2006.json (6/26, 23%)
+2026-11-01T21:33:31 INFO     etl.load_cwe: [CWE] Reading weaknesses from nvdcve-2.0-2007.json (7/26, 26%)
+2026-11-01T21:33:32 INFO     etl.load_cwe: [CWE] Reading weaknesses from nvdcve-2.0-2008.json (8/26, 30%)
+2026-11-01T21:33:33 INFO     etl.load_cwe: [CWE] Reading weaknesses from nvdcve-2.0-2009.json (9/26, 34%)
+2026-11-01T21:33:35 INFO     etl.load_cwe: [CWE] Reading weaknesses from nvdcve-2.0-2010.json (10/26, 38%)
+2026-11-01T21:33:37 INFO     etl.load_cwe: [CWE] Reading weaknesses from nvdcve-2.0-2011.json (11/26, 42%)
+2026-11-01T21:33:38 INFO     etl.load_cwe: [CWE] Reading weaknesses from nvdcve-2.0-2012.json (12/26, 46%)
+2026-11-01T21:33:40 INFO     etl.load_cwe: [CWE] Reading weaknesses from nvdcve-2.0-2013.json (13/26, 50%)
+2026-11-01T21:33:42 INFO     etl.load_cwe: [CWE] Reading weaknesses from nvdcve-2.0-2014.json (14/26, 53%)
+2026-11-01T21:33:46 INFO     etl.load_cwe: [CWE] Reading weaknesses from nvdcve-2.0-2015.json (15/26, 57%)
+2026-11-01T21:33:49 INFO     etl.load_cwe: [CWE] Reading weaknesses from nvdcve-2.0-2016.json (16/26, 61%)
+2026-11-01T21:33:53 INFO     etl.load_cwe: [CWE] Reading weaknesses from nvdcve-2.0-2017.json (17/26, 65%)
+2026-11-01T21:33:59 INFO     etl.load_cwe: [CWE] Reading weaknesses from nvdcve-2.0-2018.json (18/26, 69%)
+2026-11-01T21:34:06 INFO     etl.load_cwe: [CWE] Reading weaknesses from nvdcve-2.0-2019.json (19/26, 73%)
+2026-11-01T21:34:12 INFO     etl.load_cwe: [CWE] Reading weaknesses from nvdcve-2.0-2020.json (20/26, 76%)
+2026-11-01T21:34:23 INFO     etl.load_cwe: [CWE] Reading weaknesses from nvdcve-2.0-2021.json (21/26, 80%)
+2026-11-01T21:34:33 INFO     etl.load_cwe: [CWE] Reading weaknesses from nvdcve-2.0-2022.json (22/26, 84%)
+2026-11-01T21:34:46 INFO     etl.load_cwe: [CWE] Reading weaknesses from nvdcve-2.0-2023.json (23/26, 88%)
+2026-11-01T21:35:01 INFO     etl.load_cwe: [CWE] Reading weaknesses from nvdcve-2.0-2024.json (24/26, 92%)
+2026-11-01T21:35:18 INFO     etl.load_cwe: [CWE] Reading weaknesses from nvdcve-2.0-2025.json (25/26, 96%)
+2026-11-01T21:35:38 INFO     etl.load_cwe: [CWE] Reading weaknesses from nvdcve-2.0-2026.json (26/26, 100%)
+2026-11-01T21:36:10 INFO     CWELoader: [CWE] Ô£ô CAUSED_BY: 362316 created, 362316 edge records written with provenance lists (25425 pairs named by two records of a CVE, lists from the newest lastModified), 66975 NVD placeholders skipped, 14496 unmapped CWE refs skipped
+2026-11-01T21:36:10 INFO     CWELoader: [CWE] Ô£ô 0 (CVE, CWE) pairs appear only in an older record
+2026-11-01T21:36:10 WARNING  CWELoader: [CWE] ÔÜá 14496 CAUSED_BY pairs reference 43 CWE ids absent from cwec_v5.0.xml (Categories/Views): CWE-1, CWE-16, CWE-17, CWE-18, CWE-19, CWE-21, CWE-189, CWE-199, CWE-227, CWE-254 ...
+2026-11-01T21:36:10 INFO     CWELoader: [CWE] Ô£ô Complete: {'nodes_created': 984, 'rels_created': 362316, 'skipped_nvd_ids': 66975, 'skipped_unmapped_cwe': 14496, 'files_processed': 26, 'consequence_records': 1278, 'consequence_nodes_created': 1278, 'has_consequence_created': 1278, 'consequence_nodes_pruned': 0, 'consequence_out_of_vocabulary': 3, 'caused_by_records': 362316, 'superseded_by_newer': 25425, 'pairs_only_in_older': 0}
+2026-11-01T21:36:10 INFO     run_all_etl: [cwe] SUCCESS ÔÇö stats: {'nodes_created': 984, 'rels_created': 362316, 'skipped_nvd_ids': 66975, 'skipped_unmapped_cwe': 14496, 'files_processed': 26, 'consequence_records': 1278, 'consequence_nodes_created': 1278, 'has_consequence_created': 1278, 'consequence_nodes_pruned': 0, 'consequence_out_of_vocabulary': 3, 'caused_by_records': 362316, 'superseded_by_newer': 25425, 'pairs_only_in_older': 0}
+2026-11-01T21:36:10 INFO     run_all_etl: ============================================================
+2026-11-01T21:36:10 INFO     run_all_etl: STEP 9/16: capec
+2026-11-01T21:36:10 INFO     run_all_etl: ============================================================
+2026-11-01T21:36:10 INFO     CAPECLoader: [CAPEC] Ô£ô Starting CAPEC ETL
+2026-11-01T21:36:11 INFO     CAPECLoader: [CAPEC] Ô£ô Complete: 615 AttackPattern nodes, 1212 DEMONSTRATED_BY edges, 533 CHILD_OF edges created (56 deprecated nodes included)
+2026-11-01T21:36:11 INFO     CAPECLoader: [CAPEC] Ô£ô Consequence: 814 records written (814 nodes, 814 HAS_CONSEQUENCE created, 0 stale nodes pruned)
+2026-11-01T21:36:11 INFO     run_all_etl: [capec] SUCCESS ÔÇö stats: {'nodes_created': 615, 'rels_created': 2559, 'demonstrated_by_created': 1212, 'child_of_created': 533, 'has_consequence_created': 814, 'deprecated': 56, 'consequence_records': 814, 'consequence_nodes_created': 814, 'consequence_nodes_pruned': 0, 'consequence_out_of_vocabulary': 0}
+2026-11-01T21:36:11 INFO     run_all_etl: ============================================================
+2026-11-01T21:36:11 INFO     run_all_etl: STEP 10/16: attck
+2026-11-01T21:36:11 INFO     run_all_etl: ============================================================
+2026-11-01T21:36:11 INFO     ATTCKLoader: [ATT&CK] Ô£ô Starting ATT&CK ETL
+2026-11-01T21:36:13 INFO     ATTCKLoader: [ATT&CK] Ô£ô Tactics: 39 written
+2026-11-01T21:36:13 INFO     ATTCKLoader: [ATT&CK] Ô£ô Techniques: 383 written
+2026-11-01T21:36:13 INFO     ATTCKLoader: [ATT&CK] Ô£ô SubTechniques: 552 written
+2026-11-01T21:36:13 INFO     ATTCKLoader: [ATT&CK] Ô£ô PART_OF: 441 relationships written
+2026-11-01T21:36:13 INFO     ATTCKLoader: [ATT&CK] Ô£ô SUBTECHNIQUE_OF: 552 relationships written
+2026-11-01T21:36:13 INFO     ATTCKLoader: [ATT&CK] Ô£ô revoked-by remap: 196 revoked ids with a live successor, 26 deprecated, 1 revoked without successor
+2026-11-01T21:36:13 INFO     ATTCKLoader: [ATT&CK] Ô£ô IMPLEMENTS remap: 307 CAPECÔåÆATT&CK refs, 47 remapped via revoked-by, 3 dropped as deprecated, 0 unresolved
+2026-11-01T21:36:13 INFO     ATTCKLoader: [ATT&CK] Ô£ô IMPLEMENTS: 244 relationships written
+2026-11-01T21:36:13 INFO     ATTCKLoader: [ATT&CK] Ô£ô Complete: {'nodes_created': 974, 'rels_created': 1237, 'skipped_revoked': 575, 'tactics': 39, 'techniques': 383, 'subtechniques': 552, 'part_of': 441, 'part_of_unresolved_phases': 0, 'implements': 244, 'implements_remapped': 47, 'implements_dropped_deprecated': 3, 'implements_unresolved': 0}
+2026-11-01T21:36:13 INFO     run_all_etl: [attck] SUCCESS ÔÇö stats: {'nodes_created': 974, 'rels_created': 1237, 'skipped_revoked': 575, 'tactics': 39, 'techniques': 383, 'subtechniques': 552, 'part_of': 441, 'part_of_unresolved_phases': 0, 'implements': 244, 'implements_remapped': 47, 'implements_dropped_deprecated': 3, 'implements_unresolved': 0}
+2026-11-01T21:36:13 INFO     run_all_etl: ============================================================
+2026-11-01T21:36:13 INFO     run_all_etl: STEP 11/16: atlas
+2026-11-01T21:36:13 INFO     run_all_etl: ============================================================
+2026-11-01T21:36:17 INFO     ATLASLoader: [ATLAS] Ô£ô ATLAS-2026.09.yaml: release 2026.09, {'tactics': 16, 'techniques': 120, 'subtechniques': 88, 'mitigations': 40, 'achieves': 225, 'specializes': 88, 'mitigates': 361, 'attack_reference_rows': 44, 'excluded_tactic_attack_reference': 14, 'excluded_mitigation_attack_reference': 4, 'excluded_case_studies': 73, 'excluded_employs': 665}
+2026-11-01T21:36:19 INFO     ATLASLoader: [ATLAS] Ô£ô ADAPTED_FROM: 44 attack-reference rows, 44 written, 1 remapped, 0 dropped as deprecated, 0 unresolved []
+2026-11-01T21:36:19 INFO     ATLASLoader: [ATLAS] Ô£ô Complete: {'nodes_created': 264, 'rels_created': 718, 'release': '2026.09', 'file': 'ATLAS-2026.09.yaml', 'tactics': 16, 'techniques': 120, 'subtechniques': 88, 'mitigations': 40, 'achieves': 225, 'specializes': 88, 'mitigates': 361, 'attack_reference_rows': 44, 'excluded_tactic_attack_reference': 14, 'excluded_mitigation_attack_reference': 4, 'excluded_case_studies': 73, 'excluded_employs': 665, 'stale_AtlasTactic': 0, 'stale_AtlasTechnique': 0, 'stale_AtlasSubTechnique': 0, 'stale_AtlasMitigation': 0, 'adapted_from_rows': 44, 'adapted_from_written': 44, 'adapted_from_remapped': 1, 'adapted_from_dropped_deprecated': 0, 'adapted_from_unresolved': 0, 'adapted_from_unresolved_ids': []}
+2026-11-01T21:36:19 INFO     run_all_etl: [atlas] SUCCESS ÔÇö stats: {'nodes_created': 264, 'rels_created': 718, 'release': '2026.09', 'file': 'ATLAS-2026.09.yaml', 'tactics': 16, 'techniques': 120, 'subtechniques': 88, 'mitigations': 40, 'achieves': 225, 'specializes': 88, 'mitigates': 361, 'attack_reference_rows': 44, 'excluded_tactic_attack_reference': 14, 'excluded_mitigation_attack_reference': 4, 'excluded_case_studies': 73, 'excluded_employs': 665, 'stale_AtlasTactic': 0, 'stale_AtlasTechnique': 0, 'stale_AtlasSubTechnique': 0, 'stale_AtlasMitigation': 0, 'adapted_from_rows': 44, 'adapted_from_written': 44, 'adapted_from_remapped': 1, 'adapted_from_dropped_deprecated': 0, 'adapted_from_unresolved': 0, 'adapted_from_unresolved_ids': []}
+2026-11-01T21:36:19 INFO     run_all_etl: ============================================================
+2026-11-01T21:36:19 INFO     run_all_etl: STEP 12/16: d3fend
+2026-11-01T21:36:19 INFO     run_all_etl: ============================================================
+2026-11-01T21:36:19 INFO     D3FENDLoader: [D3FEND] Ô£ô Starting D3FEND ETL
+2026-11-01T21:36:19 INFO     D3FENDLoader: [D3FEND] Ô£ô ID lookup built: 493 fragmentÔåÆid mappings
+2026-11-01T21:36:20 INFO     D3FENDLoader: [D3FEND] Ô£ô MITIGATED_BY remap: 3109 (ATT&CK, D3FEND) pairs, 88 remapped via revoked-by, 11 dropped as deprecated, 0 unresolved, 3087 distinct pairs after remap
+2026-11-01T21:36:21 INFO     D3FENDLoader: [D3FEND] Ô£ô DefensiveTechnique: 145 nodes written
+2026-11-01T21:36:21 INFO     D3FENDLoader: [D3FEND] Ô£ô MITIGATED_BY: 3087 relationships written
+2026-11-01T21:36:21 INFO     D3FENDLoader: [D3FEND] Ô£ô Complete: {'nodes_created': 145, 'rels_created': 3087, 'id_fallbacks': 0, 'mitigated_by': 3087, 'mitigated_by_remapped': 88, 'mitigated_by_dropped_deprecated': 11, 'mitigated_by_unresolved': 0}
+2026-11-01T21:36:21 INFO     run_all_etl: [d3fend] SUCCESS ÔÇö stats: {'nodes_created': 145, 'rels_created': 3087, 'id_fallbacks': 0, 'mitigated_by': 3087, 'mitigated_by_remapped': 88, 'mitigated_by_dropped_deprecated': 11, 'mitigated_by_unresolved': 0}
+2026-11-01T21:36:21 INFO     run_all_etl: ============================================================
+2026-11-01T21:36:21 INFO     run_all_etl: STEP 13/16: car
+2026-11-01T21:36:21 INFO     run_all_etl: ============================================================
+2026-11-01T21:36:21 INFO     CARLoader: [CAR] Ô£ô Starting CAR ETL
+2026-11-01T21:36:24 INFO     CARLoader: [CAR] Ô£ô Complete: {'nodes_created': 102, 'rels_created': 278, 'files_loaded': 102}
+2026-11-01T21:36:24 INFO     run_all_etl: [car] SUCCESS ÔÇö stats: {'nodes_created': 102, 'rels_created': 278, 'files_loaded': 102}
+2026-11-01T21:36:24 INFO     run_all_etl: ============================================================
+2026-11-01T21:36:24 INFO     run_all_etl: STEP 14/16: shield
+2026-11-01T21:36:24 INFO     run_all_etl: ============================================================
+2026-11-01T21:36:24 INFO     SHIELDLoader: [SHIELD] Ô£ô Starting SHIELD ETL
+2026-11-01T21:36:24 INFO     SHIELDLoader: [SHIELD] Ô£ô DeceptionTechnique: 33 nodes written
+2026-11-01T21:36:24 INFO     SHIELDLoader: [SHIELD] Ô£ô COUNTERED_BY: 261 relationships written
+2026-11-01T21:36:24 INFO     SHIELDLoader: [SHIELD] Ô£ô Complete: {'nodes_created': 33, 'rels_created': 255}
+2026-11-01T21:36:24 INFO     run_all_etl: [shield] SUCCESS ÔÇö stats: {'nodes_created': 33, 'rels_created': 255}
+2026-11-01T21:36:24 INFO     run_all_etl: ============================================================
+2026-11-01T21:36:24 INFO     run_all_etl: STEP 15/16: engage
+2026-11-01T21:36:24 INFO     run_all_etl: ============================================================
+2026-11-01T21:36:24 INFO     ENGAGELoader: [ENGAGE] Ô£ô Starting ENGAGE ETL
+2026-11-01T21:36:24 INFO     ENGAGELoader: [ENGAGE] Ô£ô EngagementConcept nodes: 31 activities, 9 approaches, 5 goals
+2026-11-01T21:36:24 INFO     ENGAGELoader: [ENGAGE] Ô£ô DISRUPTS: 596 relationships written (23 EAC activities ÔåÆ ATT&CK techniques)
+2026-11-01T21:36:24 INFO     ENGAGELoader: [ENGAGE] Ô£ô Complete: {'nodes_created': 45, 'rels_created': 593, 'activities': 31, 'approaches': 9, 'goals': 5}
+2026-11-01T21:36:24 INFO     run_all_etl: [engage] SUCCESS ÔÇö stats: {'nodes_created': 45, 'rels_created': 593, 'activities': 31, 'approaches': 9, 'goals': 5}
+2026-11-01T21:36:24 INFO     run_all_etl: ============================================================
+2026-11-01T21:36:24 INFO     run_all_etl: STEP 16/16: build_metadata
+2026-11-01T21:36:24 INFO     run_all_etl: ============================================================
+2026-11-01T21:36:26 WARNING  etl.build_metadata: [BuildMetadata] working tree has uncommitted changes; pipelineCommit 803dc015d754 does not describe them
+2026-11-01T21:36:26 INFO     etl.build_metadata: [BuildMetadata] CPE=2026-10-30T23:50:01Z..2026-10-31T23:48:52Z
+2026-11-01T21:36:26 INFO     etl.build_metadata: [BuildMetadata] CVE=2026-10-21T03:05:10Z..2026-11-01T10:00:04Z
+2026-11-01T21:36:26 INFO     etl.build_metadata: [BuildMetadata] CVSS=2026-10-21T03:05:10Z..2026-11-01T10:00:04Z
+2026-11-01T21:36:26 INFO     etl.build_metadata: [BuildMetadata] CWE=5.0
+2026-11-01T21:36:26 INFO     etl.build_metadata: [BuildMetadata] CAPEC=3.9
+2026-11-01T21:36:26 INFO     etl.build_metadata: [BuildMetadata] ATTCK=download:2026-11-01;modified-max:2026-10-13
+2026-11-01T21:36:26 INFO     etl.build_metadata: [BuildMetadata] D3FEND=1.3.0
+2026-11-01T21:36:26 INFO     etl.build_metadata: [BuildMetadata] CAR=download:2026-11-01
+2026-11-01T21:36:26 INFO     etl.build_metadata: [BuildMetadata] SHIELD=download:2026-11-01
+2026-11-01T21:36:26 INFO     etl.build_metadata: [BuildMetadata] ENGAGE=download:2026-11-01
+2026-11-01T21:36:26 INFO     etl.build_metadata: [BuildMetadata] KEV=2026.10.30
+2026-11-01T21:36:26 INFO     etl.build_metadata: [BuildMetadata] EPSS=2026-11-01;model:v2026.06.15
+2026-11-01T21:36:26 INFO     etl.build_metadata: [BuildMetadata] ATLAS=2026.09
+2026-11-01T21:36:26 INFO     run_all_etl: [build_metadata] SUCCESS ÔÇö stats: {'specVersion': '1.2.1', 'pipelineCommit': '803dc015d754febec5394cdd7737c50137feed1a', 'snapshots': 13, 'missing': []}
+2026-11-01T21:36:26 INFO     run_all_etl: Pipeline complete ÔÇö all steps succeeded.

@@ -1,0 +1,203 @@
+{
+  "run": {
+    "date": "2026-11-01",
+    "database": "kgcs-2026-11",
+    "neo4j": "2026.07.x (same instance as kgcs-v12)",
+    "pipeline_commit": "803dc015d754febec5394cdd7737c50137feed1a",
+    "pipeline_branch": "devel",
+    "spec_version": "1.2.1",
+    "python": "3.14 (.conda)",
+    "neo4j_driver": "6.x"
+  },
+  "sources": {
+    "cwe": "5.0 (xmlns cwe-8, 2026-10-28)",
+    "capec": "3.9",
+    "attck": {
+      "download": "2026-11-01",
+      "modified_max": "2026-10-13",
+      "note": "October release: +7/-2 techniques vs 2026-09-06 bundle"
+    },
+    "d3fend": "1.3.0",
+    "kev": "2026.10.30 (1766 entries)",
+    "epss": "2026-11-01 model v2026.06.15",
+    "atlas": "2026.09",
+    "nvd_snapshot": "2026-11-01 (feeds 03:00Z)",
+    "cpe_chunks": 18,
+    "cpematch_chunks": 74,
+    "raw_bytes": null
+  },
+  "etl": {
+    "steps": 16,
+    "started": "2026-11-01T19:47:08",
+    "finished": "2026-11-01T21:36:26",
+    "duration_min": 109,
+    "deadlocks": 0,
+    "errors": 0,
+    "per_step": {
+      "constraints": {
+        "min": 0.1
+      },
+      "cpe": {
+        "nodes": 2538896,
+        "rels": 31775150,
+        "min": 71
+      },
+      "cve": {
+        "nodes": 3339362,
+        "rels": 9281356,
+        "min": 28
+      },
+      "cvss": {
+        "nodes": 566912,
+        "rels": 566912,
+        "min": 3.6
+      },
+      "kev": {
+        "nodes": 1765,
+        "rels": 1765,
+        "dropped_no_vulnerability": 1
+      },
+      "epss": {
+        "nodes": 398784,
+        "rels": 398784,
+        "dropped_no_vulnerability": 0
+      },
+      "ssvc": {
+        "nodes": 210258,
+        "rels": 210258,
+        "adp_entries": 230383,
+        "duplicates_collapsed": 20125
+      },
+      "cwe": {
+        "nodes": 984,
+        "rels": 362316,
+        "consequences": 1278,
+        "skipped_nvd_ids": 66975,
+        "skipped_unmapped_cwe": 14496,
+        "min": 2.9
+      },
+      "capec": {
+        "nodes": 615,
+        "rels": 2559
+      },
+      "attck": {
+        "nodes": 974,
+        "rels": 1237,
+        "tactics": 39,
+        "techniques": 383,
+        "subtechniques": 552,
+        "skipped_revoked": 575
+      },
+      "atlas": {
+        "nodes": 264,
+        "rels": 718
+      },
+      "d3fend": {
+        "nodes": 145,
+        "rels": 3087
+      },
+      "car": {
+        "nodes": 102,
+        "rels": 278
+      },
+      "shield": {
+        "nodes": 33,
+        "rels": 255
+      },
+      "engage": {
+        "nodes": 45,
+        "rels": 593
+      },
+      "build_metadata": {
+        "nodes": 1,
+        "snapshots": 13
+      }
+    }
+  },
+  "graph": {
+    "total_nodes": 7061232,
+    "reconciled_with_etl": true,
+    "labels": {
+      "Platform": 1866213,
+      "PlatformConfiguration": 672683,
+      "Vulnerability": 417654,
+      "VulnerabilityConfiguration": 778251,
+      "VulnerabilityConfigurationNode": 1228978,
+      "Reference": 914479,
+      "Score": 566912,
+      "Weakness": 984,
+      "Consequence": 2092,
+      "AttackPattern": 615,
+      "Technique": 383,
+      "SubTechnique": 552,
+      "Tactic": 39,
+      "DefensiveTechnique": 145,
+      "DetectionAnalytic": 102,
+      "DeceptionTechnique": 33,
+      "EngagementConcept": 45,
+      "KevEntry": 1765,
+      "EpssScore": 398784,
+      "SsvcDecision": 210258,
+      "AtlasTactic": 16,
+      "AtlasTechnique": 120,
+      "AtlasSubTechnique": 88,
+      "AtlasMitigation": 40,
+      "BuildMetadata": 1
+    },
+    "rel_types": {
+      "MATCHES_PLATFORM": 31775150,
+      "AFFECTS": 2642684,
+      "REFERENCES": 1355732,
+      "HAS_SCORE": 566912,
+      "CAUSED_BY": 362316,
+      "HAS_CONSEQUENCE": 2092,
+      "DEMONSTRATED_BY": 1212,
+      "CHILD_OF": 533,
+      "IMPLEMENTS": 244,
+      "PART_OF": 441,
+      "SUBTECHNIQUE_OF": 552,
+      "MITIGATED_BY": 3087,
+      "DETECTED_BY": 278,
+      "COUNTERED_BY": 255,
+      "DISRUPTS": 593,
+      "HAS_KEV_ENTRY": 1765,
+      "HAS_EPSS": 398784,
+      "HAS_SSVC": 210258,
+      "ACHIEVES": 225,
+      "SPECIALIZES": 88,
+      "MITIGATES": 361,
+      "ADAPTED_FROM": 44
+    }
+  },
+  "chain": {
+    "cves": 417654,
+    "cve_with_cwe": 323894,
+    "cve_to_cwe_pct": 77.55,
+    "cve_without_cvss": 23530,
+    "cve_without_cvss_pct": 5.63,
+    "cvss_scores_by_version": {
+      "2.0": 197044,
+      "3.0": 54791,
+      "3.1": 270647,
+      "4.0": 44430
+    }
+  },
+  "validation": {
+    "shacl_tbox": "PASS 10/10 + core invariants",
+    "constraints_present": "PASS 27/27",
+    "postload_cypher": "34/35 — FAIL cwe_consequence_vocabulary (3 CWE 5.0 values outside spec 1.2.1 vocabulary)",
+    "shacl_export_v12": "CONFORMS, 1 known warning (AML.T0073 ADAPTED_FROM remapped T1656→T1684.001)",
+    "compare_v12": "EQUAL 8/8",
+    "graph_quality": "PASS 6/6 against expected-graph.json from today's raw (first pass against the 2026-09 file: PART_OF 441 vs 436 = +5 techniques of the October ATT&CK release)",
+    "minimums": "PASS 12/12",
+    "sample": "5/5 (see README)",
+    "expected_offline": "step 1 full scan (stdout, 19:08): KEV 1765 · EPSS 398784 · SSVC 210258 · ATLAS 264/718; saved expected-v12.json is the --skip-cve re-run (ATLAS only)"
+  },
+  "verdict": "GREEN — two reds, both caused by newer upstream releases detected correctly, none by load defects",
+  "not_verified": [
+    "raw download byte total (download.log not kept)",
+    "CPE step 50% slower than 2026-09-28 (71 vs ~45 min): not diagnosed",
+    "Neo4j server version not recorded from the server itself",
+    "CAUSED_BY provenance sampled on 2 CVEs only"
+  ]
+}

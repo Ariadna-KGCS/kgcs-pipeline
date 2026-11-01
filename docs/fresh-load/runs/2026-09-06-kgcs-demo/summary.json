@@ -1,0 +1,79 @@
+{
+  "run": {
+    "date": "2026-09-06",
+    "database": "kgcs-demo",
+    "neo4j": "2026.07.1",
+    "neo4j_driver": "6.2.0",
+    "python": "3.14.6",
+    "pipeline_commit": "6c137d9",
+    "spec_version": "1.0.0",
+    "note": "reconstructed from ARIADNA/tasks/kgcs-demo-fresh-load-2026-09-06.{md,ps1}; v1.0 pipeline, 11 steps, no decision leaves / ATLAS / consequences"
+  },
+  "sources": {
+    "nvd_snapshot": "2026-09-06",
+    "raw_bytes": 7483922855,
+    "raw_files": 266
+  },
+  "etl": {
+    "steps": 11,
+    "duration_min": 34,
+    "per_step": {
+      "cpe": {
+        "nodes": 2486924,
+        "rels": 30339212
+      },
+      "cve": {
+        "nodes": 3203586,
+        "rels": 8988736
+      },
+      "cvss": {
+        "nodes": 530774
+      },
+      "cwe": {
+        "nodes": 969,
+        "rels": 331107
+      },
+      "capec": {
+        "nodes": 615
+      },
+      "attck": {
+        "nodes": 957,
+        "tactics": 39,
+        "techniques": 378,
+        "subtechniques": 540
+      },
+      "d3fend": {
+        "nodes": 145
+      },
+      "car": {
+        "nodes": 102
+      },
+      "shield": {
+        "nodes": 33
+      },
+      "engage": {
+        "nodes": 45
+      }
+    }
+  },
+  "graph": {
+    "total_nodes": 6224150,
+    "reconciled_with_etl": true
+  },
+  "chain": {
+    "cves": 386939,
+    "cve_to_cwe_pct": 76.7,
+    "cve_without_cvss_pct": 5.3,
+    "cvss_scores_by_version": {
+      "4.0": 35000
+    }
+  },
+  "validation": {
+    "shacl_tbox": "PASS 9/9 + core invariants",
+    "constraints_present": "PASS 19/19",
+    "postload_cypher": "PASS 10/10",
+    "minimums": "PASS",
+    "id_patterns_live": "17 verified, 0 violations"
+  },
+  "verdict": "GREEN"
+}

@@ -13,6 +13,8 @@ venv/
 data/raw/
 *.log
 logs/
+# ...except the evidence kept per fresh-load run (docs/fresh-load.md)
+!docs/fresh-load/runs/**/*.log
 
 # Pinned spec materialization (see SPEC_VERSION)
 spec/

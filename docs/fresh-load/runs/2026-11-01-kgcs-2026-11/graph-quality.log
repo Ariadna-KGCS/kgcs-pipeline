@@ -1,0 +1,7 @@
+INFO    etl.neo4j_writer: Neo4jWriter connected to bolt://localhost:7687 (database=kgcs-2026-11)
+PASS  PART_OF: graph=441 expected=441
+PASS  IMPLEMENTS: graph=244 expected=244
+PASS  MITIGATED_BY: graph=3087 expected=3087
+PASS  CHILD_OF: graph=533 expected=533
+PASS  IMPLEMENTS endpoints on revoked/deprecated ATT&CK ids: 0 (106 distinct endpoints checked)
+PASS  MITIGATED_BY endpoints on revoked/deprecated ATT&CK ids: 0 (306 distinct endpoints checked)

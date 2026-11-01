@@ -1,0 +1,61 @@
+                       Node Counts                        
++--------------------------------------------------------+
+| Label                    |     Count |    Min | Status |
+|--------------------------+-----------+--------+--------|
+| Platform                 | 1,866,213 |  50000 |   OK   |
+| PlatformConfiguration    |   672,683 |      - |   -    |
+| Vulnerability            |   417,654 | 250000 |   OK   |
+| Reference                |   914,479 |      - |   -    |
+| Score                    |   566,912 |      - |   -    |
+| Weakness                 |       984 |    900 |   OK   |
+| AttackPattern            |       615 |    500 |   OK   |
+| Technique                |       383 |    350 |   OK   |
+| SubTechnique             |       552 |    400 |   OK   |
+| Tactic                   |        39 |     14 |   OK   |
+| DefensiveTechnique       |       145 |      - |   -    |
+| DetectionAnalytic        |       102 |      - |   -    |
+| DeceptionTechnique       |        33 |      - |   -    |
+| EngagementConcept        |        45 |      - |   -    |
+| Consequence              |     2,092 |      - |   -    |
+| BuildMetadata            |         1 |      - |   -    |
+| KevEntry                 |     1,765 |   1500 |   OK   |
+| EpssScore                |   398,784 | 300000 |   OK   |
+| SsvcDecision             |   210,258 | 150000 |   OK   |
+| AtlasTactic              |        16 |     14 |   OK   |
+| AtlasTechnique           |       120 |    100 |   OK   |
+| AtlasSubTechnique        |        88 |     70 |   OK   |
+| AtlasMitigation          |        40 |     30 |   OK   |
++--------------------------------------------------------+
+           Relationship Counts           
++---------------------------------------+
+| Type                     |      Count |
+|--------------------------+------------|
+| MATCHES_PLATFORM         | 31,775,150 |
+| AFFECTS                  |  2,642,684 |
+| REFERENCES               |  1,355,732 |
+| HAS_SCORE                |    566,912 |
+| CAUSED_BY                |    362,316 |
+| DEMONSTRATED_BY          |      1,212 |
+| IMPLEMENTS               |        244 |
+| PART_OF                  |        441 |
+| SUBTECHNIQUE_OF          |        552 |
+| MITIGATED_BY             |      3,087 |
+| DETECTED_BY              |        278 |
+| COUNTERED_BY             |        255 |
+| DISRUPTS                 |        593 |
+| HAS_CONSEQUENCE          |      2,092 |
+| HAS_KEV_ENTRY            |      1,765 |
+| HAS_EPSS                 |    398,784 |
+| HAS_SSVC                 |    210,258 |
+| ACHIEVES                 |        225 |
+| SPECIALIZES              |         88 |
+| MITIGATES                |        361 |
+| ADAPTED_FROM             |         44 |
++---------------------------------------+
+
+Freshness
+  Vulnerability: 2026-11-01T14:18:53.123
+  Platform: 2026-10-30T18:31:52.787
+  Weakness: CWE-1004
+
+Minimum check PASSED.

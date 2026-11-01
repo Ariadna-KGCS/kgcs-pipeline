@@ -1,0 +1,47 @@
+{
+ "ATLAS": {
+  "ADAPTED_FROM": 44,
+  "ADAPTED_FROM_distinct_targets": 39,
+  "ADAPTED_FROM_dropped_deprecated": 0,
+  "ADAPTED_FROM_remapped": 1,
+  "ADAPTED_FROM_remapped_detail": [
+   "AML.T0073: T1656 -> T1684.001"
+  ],
+  "ADAPTED_FROM_rows": 44,
+  "ADAPTED_FROM_to_SubTechnique": 9,
+  "ADAPTED_FROM_unresolved": 0,
+  "ADAPTED_FROM_unresolved_ids": [],
+  "achieves": 225,
+  "attack_reference_rows": 44,
+  "excluded_case_studies": 73,
+  "excluded_employs": 665,
+  "excluded_mitigation_attack_reference": 4,
+  "excluded_tactic_attack_reference": 14,
+  "file": "ATLAS-2026.09.yaml",
+  "mitigates": 361,
+  "mitigations": 40,
+  "release": "2026.09",
+  "specializes": 88,
+  "subtechniques": 88,
+  "tactics": 16,
+  "techniques": 120
+ },
+ "EPSS": {
+  "files": [
+   "epss_scores-2026-11-01.csv.gz"
+  ],
+  "headers": [
+   {
+    "model_version": "v2026.06.15",
+    "score_date": "2026-11-01T12:00:16Z",
+    "score_day": "2026-11-01"
+   }
+  ]
+ },
+ "KEV": {
+  "catalogVersion": "2026.10.30",
+  "duplicates": 0,
+  "entries": 1766
+ },
+ "raw_data_dir": "data\\raw"
+}

@@ -1,0 +1,10 @@
+| Item | Expected |
+| --- | --- |
+| AtlasTactic | 16 |
+| AtlasTechnique | 120 |
+| AtlasSubTechnique | 88 |
+| AtlasMitigation | 40 |
+| ACHIEVES | 225 |
+| SPECIALIZES | 88 |
+| MITIGATES | 361 |
+| ADAPTED_FROM | 44 |

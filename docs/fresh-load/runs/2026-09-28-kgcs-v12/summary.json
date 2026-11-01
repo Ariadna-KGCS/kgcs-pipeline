@@ -1,0 +1,113 @@
+{
+  "run": {
+    "date": "2026-09-28",
+    "database": "kgcs-v12",
+    "pipeline_commit": "c40616f8cc9602572a9ee2996986d423b83f9a3d",
+    "spec_version": "1.2.1",
+    "note": "reconstructed from etl-2026-09-28-v12.log and docs/spec-v1.2-deltas.md; reference build for spec 1.2.1 (Q19)"
+  },
+  "sources": {
+    "cwe": "4.20",
+    "capec": "3.9",
+    "attck": {
+      "download": "2026-09-06"
+    },
+    "kev": "2026.09.25 (1726 entries)",
+    "epss": "2026-09-27 model v2026.06.15",
+    "atlas": "2026.09",
+    "nvd_snapshot": "2026-09-06",
+    "cpe_chunks": 17,
+    "cpematch_chunks": 71
+  },
+  "etl": {
+    "steps": 16,
+    "started": "2026-09-28T00:41:47",
+    "finished": "2026-09-28T01:59:09",
+    "duration_min": 77,
+    "deadlocks": 0,
+    "errors": 0,
+    "per_step": {
+      "cpe": {
+        "nodes": 2486924,
+        "rels": 30339212
+      },
+      "cve": {
+        "nodes": 3203586,
+        "rels": 8988736
+      },
+      "cvss": {
+        "nodes": 530774,
+        "rels": 530774
+      },
+      "kev": {
+        "nodes": 1711,
+        "dropped_no_vulnerability": 15
+      },
+      "epss": {
+        "nodes": 368628,
+        "dropped_no_vulnerability": 114
+      },
+      "ssvc": {
+        "nodes": 182047
+      },
+      "cwe": {
+        "nodes": 969,
+        "rels": 331107,
+        "skipped_nvd_ids": 66421,
+        "skipped_unmapped_cwe": 14360
+      },
+      "capec": {
+        "nodes": 615,
+        "rels": 2559
+      },
+      "attck": {
+        "nodes": 957,
+        "rels": 1220,
+        "tactics": 39,
+        "techniques": 378,
+        "subtechniques": 540,
+        "skipped_revoked": 574
+      },
+      "atlas": {
+        "nodes": 264,
+        "rels": 718
+      },
+      "d3fend": {
+        "nodes": 145,
+        "rels": 3087
+      },
+      "car": {
+        "nodes": 102,
+        "rels": 278
+      },
+      "shield": {
+        "nodes": 33,
+        "rels": 255
+      },
+      "engage": {
+        "nodes": 45,
+        "rels": 593
+      },
+      "build_metadata": {
+        "nodes": 1,
+        "snapshots": 13
+      }
+    }
+  },
+  "graph": {
+    "rel_types": {
+      "PART_OF": 436,
+      "IMPLEMENTS": 244,
+      "MITIGATED_BY": 3087,
+      "CHILD_OF": 533,
+      "ADAPTED_FROM": 44
+    }
+  },
+  "validation": {
+    "compare_v12": "EQUAL",
+    "note": "see docs/spec-v1.2-deltas.md"
+  },
+  "not_verified": [
+    "total node count not recorded in this layout"
+  ]
+}
