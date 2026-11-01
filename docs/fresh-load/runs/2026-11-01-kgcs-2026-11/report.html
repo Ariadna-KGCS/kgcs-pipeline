@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KGCS Fresh Load 2026-11-01</title>
+<meta name="description" content="Fresh KGCS build on Neo4j database kgcs-2026-11: 16 ETL steps, 7.06 M nodes reconciled, validation evidence and findings.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue-900:#1F4E79; --blue-600:#2E6CB5; --blue-100:#E8F0F9;
+    --ink:#14181D; --paper:#FAFAF9; --surface:#FFFFFF; --line:#E3E7EC; --muted:#5B6472;
+    --success:#1D8A5F; --success-bg:#E7F5EF; --warning:#B4750F; --warning-bg:#FBF1E1;
+    --danger:#B23A3A; --danger-bg:#F9E7E7;
+    --code-bg:#101826; --code-ink:#D9E4F3; --code-accent:#7FB3E8;
+    --gold:#D4A24E;
+    --shadow:0 1px 2px rgba(20,30,45,.04),0 8px 24px -12px rgba(20,30,45,.12);
+    --cpe:#378ADD; --cve:#E24B4A; --cwe:#D85A30; --capec:#D4537E; --attck:#7F77DD; --d3fend:#1D9E75; --car:#639922; --shield:#888780; --engage:#EF9F27; --atlas:#9A7BDD; --kev:#C94A7B;
+  }
+  :root[data-theme="dark"], :root:not([data-theme="light"]){
+    --blue-100:#17263A;
+    --ink:#E9EDF2; --paper:#0F1B2D; --surface:#141F30; --line:#26344A; --muted:#93A0AF;
+    --success:#4CBE8E; --success-bg:#123227; --warning:#E0A63C; --warning-bg:#332510;
+    --danger:#E06C6C; --danger-bg:#3A1818;
+    --code-bg:#0A0F16; --code-ink:#CFE0F5; --code-accent:#8FC0EE;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px -12px rgba(0,0,0,.5);
+  }
+  :root[data-theme="light"]{
+    --blue-100:#E8F0F9; --ink:#14181D; --paper:#FAFAF9; --surface:#FFFFFF; --line:#E3E7EC; --muted:#5B6472;
+    --success:#1D8A5F; --success-bg:#E7F5EF; --warning:#B4750F; --warning-bg:#FBF1E1; --danger:#B23A3A; --danger-bg:#F9E7E7;
+    --code-bg:#101826; --code-ink:#D9E4F3; --code-accent:#7FB3E8;
+    --shadow:0 1px 2px rgba(20,30,45,.04),0 8px 24px -12px rgba(20,30,45,.12);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:"IBM Plex Sans",-apple-system,Segoe UI,sans-serif;font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  h1,h2,h3,.display{font-family:"Space Grotesk",-apple-system,sans-serif;text-wrap:balance;letter-spacing:-.01em;margin:0}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+  a{color:var(--blue-600)} ::selection{background:var(--blue-100)}
+  .wrap{max-width:960px;margin:0 auto;padding:0 20px}
+  .topbar{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .topbar-inner{display:flex;align-items:center;justify-content:space-between;height:56px;gap:16px}
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand-mark{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,var(--blue-900),var(--blue-600));position:relative}
+  .brand-mark::after{content:"";position:absolute;inset:7px;border:2px solid var(--gold);border-radius:3px;transform:rotate(45deg)}
+  .brand-name{font-family:"Space Grotesk","IBM Plex Sans",sans-serif;font-weight:600;font-size:15px;letter-spacing:.02em}
+  .brand-sub{font-size:12px;color:var(--muted);font-family:"IBM Plex Mono"}
+  nav.jump{display:flex;gap:16px;font-size:13px}
+  nav.jump a{color:var(--muted);text-decoration:none} nav.jump a:hover{color:var(--ink)}
+  @media (max-width:820px){nav.jump{display:none}}
+  .theme-btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer;font-family:"IBM Plex Mono"}
+  header.hero{padding:56px 0 40px;border-bottom:1px solid var(--line)}
+  .eyebrow{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--blue-600);margin-bottom:14px;display:flex;gap:10px;align-items:center}
+  .eyebrow .dot{width:8px;height:8px;border-radius:50%;background:var(--success);box-shadow:0 0 0 4px var(--success-bg)}
+  h1.title{font-size:clamp(30px,4.4vw,44px);font-weight:600;line-height:1.12;max-width:18ch}
+  .subtitle{margin-top:16px;font-size:17px;color:var(--muted);max-width:60ch}
+  .meta{display:flex;flex-wrap:wrap;gap:28px;margin-top:28px}
+  .meta-item .k{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .meta-item .v{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-size:14px;margin-top:3px}
+  section{padding:52px 0;border-bottom:1px solid var(--line)} section:last-of-type{border-bottom:none}
+  .kicker{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--blue-600);margin-bottom:10px}
+  h2.h{font-size:26px;font-weight:600;margin-bottom:6px}
+  .lede{color:var(--muted);max-width:64ch;margin-top:8px;font-size:15.5px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:28px}
+  .kpi{background:var(--surface);padding:22px 20px}
+  .kpi .num{font-family:"Space Grotesk","IBM Plex Sans",sans-serif;font-size:30px;font-weight:600;letter-spacing:-.01em}
+  .kpi .num sup{font-size:14px;color:var(--success);font-weight:600;margin-left:4px}
+  .kpi .num sup.warn{color:var(--warning)}
+  .kpi .lbl{font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.4}
+  .summary-block{display:grid;grid-template-columns:1.3fr 1fr;gap:40px;margin-top:32px;align-items:start}
+  @media (max-width:760px){.summary-block{grid-template-columns:1fr}}
+  .summary-block p{margin:0 0 14px}
+  .callout{background:var(--blue-100);border:1px solid var(--line);border-radius:10px;padding:18px 20px}
+  .callout .t{font-family:"Space Grotesk","IBM Plex Sans",sans-serif;font-weight:600;font-size:14px;margin-bottom:6px}
+  .callout .d{font-size:13.5px;color:var(--muted)}
+  .timeline{margin-top:32px}
+  .step{display:grid;grid-template-columns:32px 1fr;gap:18px;position:relative}
+  .step:not(:last-child){padding-bottom:22px}
+  .step-dot-col{display:flex;flex-direction:column;align-items:center}
+  .step-num{width:32px;height:32px;border-radius:50%;background:var(--surface);border:1.5px solid var(--blue-600);color:var(--blue-600);display:flex;align-items:center;justify-content:center;font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-size:13px;font-weight:600;flex:none;z-index:1}
+  .step-line{width:1.5px;flex:1;background:var(--line);margin-top:4px}
+  .step-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:10px}
+  .step-title{font-family:"Space Grotesk","IBM Plex Sans",sans-serif;font-weight:600;font-size:16.5px}
+  .step-time{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;color:var(--muted)}
+  .step-desc{margin-top:6px;font-size:14.5px;color:var(--muted);max-width:66ch}
+  .step-desc b{color:var(--ink);font-weight:600}
+  .pill{display:inline-flex;align-items:center;gap:5px;font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;padding:2px 9px;border-radius:99px;font-weight:600;letter-spacing:.02em}
+  .pill-pass{background:var(--success-bg);color:var(--success)} .pill-note{background:var(--warning-bg);color:var(--warning)} .pill-fail{background:var(--danger-bg);color:var(--danger)}
+  .tbl-wrap{overflow-x:auto;margin-top:22px;border:1px solid var(--line);border-radius:10px}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+  th,td{text-align:left;padding:9px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:var(--blue-100);font-weight:600}
+  td.num,th.num{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;text-align:right;font-variant-numeric:tabular-nums}
+  tr:last-child td{border-bottom:none}
+  .delta-up{color:var(--success)} .delta-eq{color:var(--muted)} .delta-dn{color:var(--warning)}
+  td:last-child{white-space:normal;min-width:180px} .sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:8px;vertical-align:-1px}
+  .code{background:var(--code-bg);color:var(--code-ink);border-radius:10px;padding:16px 18px;font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-size:12.8px;line-height:1.65;overflow-x:auto;margin-top:16px;white-space:pre}
+  .code .k{color:var(--code-accent)} .code .c{color:#7C8AA0}
+  .finding{display:grid;grid-template-columns:30px 1fr;gap:16px;padding:20px 0;border-bottom:1px solid var(--line)}
+  .finding:last-child{border-bottom:none}
+  .finding-idx{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;color:var(--blue-600);font-weight:600;font-size:14px}
+  .finding-title{font-family:"Space Grotesk","IBM Plex Sans",sans-serif;font-weight:600;font-size:15.5px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .finding-body{margin-top:6px;font-size:14.5px;color:var(--muted);max-width:70ch}
+  .finding-body code,.step-desc code,.lede code,td code,p code{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-size:.9em;background:var(--blue-100);padding:1px 5px;border-radius:4px}
+  .tag{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;padding:2px 8px;border-radius:5px;background:var(--blue-100);color:var(--blue-600);font-weight:600}
+  .cov{margin-top:24px}
+  .cov-row{display:grid;grid-template-columns:220px 1fr 110px;align-items:center;gap:14px;margin-bottom:14px}
+  @media (max-width:640px){.cov-row{grid-template-columns:1fr;gap:6px}}
+  .cov-lbl{font-size:14px} .cov-lbl small{display:block;color:var(--muted);font-size:12px}
+  .bar{height:10px;background:var(--line);border-radius:99px;overflow:hidden;position:relative}
+  .bar>i{display:block;height:100%;border-radius:99px}
+  .bar>b{position:absolute;top:-3px;width:2px;height:16px;background:var(--gold)}
+  .cov-val{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-size:13px;text-align:right}
+  .cov-val small{color:var(--muted);display:block;font-size:11.5px}
+  ul.plain{padding-left:18px;margin:14px 0 0;color:var(--muted);font-size:14.5px} ul.plain li{margin-bottom:8px} ul.plain b{color:var(--ink)}
+  footer{padding:36px 0;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+  .files{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:18px}
+  .file{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13px}
+  .file .n{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-size:12.5px} .file .d{color:var(--muted);font-size:12px;margin-top:2px}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="wrap topbar-inner">
+  <div class="brand"><div class="brand-mark"></div><div><div class="brand-name">MotherHacker · KGCS</div><div class="brand-sub">kgcs-pipeline · fresh-load run</div></div></div>
+  <nav class="jump"><a href="#summary">Summary</a><a href="#pipeline">Pipeline</a><a href="#integrity">Integrity</a><a href="#compare">vs. September</a><a href="#chain">Chain</a><a href="#findings">Findings</a><a href="#scope">Scope</a><a href="#appendix">Appendix</a></nav>
+  <button class="theme-btn" onclick="var r=document.documentElement;r.dataset.theme=r.dataset.theme==='dark'?'light':'dark'">theme</button>
+</div></div>
+
+<header class="hero"><div class="wrap">
+  <div class="eyebrow"><span class="dot"></span>Fresh load · kgcs-2026-11 · GREEN</div>
+  <h1 class="title">A 7.06-million-node graph, rebuilt on November data and reconciled to the node</h1>
+  <p class="subtitle">Second full build under spec 1.2.1, first one driven by the four-step <code>fresh-load</code> procedure. Sixteen ETL steps, every count tied back to the raw files, two red checks — both newer upstream releases caught on purpose, none a load defect.</p>
+  <div class="meta">
+    <div class="meta-item"><div class="k">Run</div><div class="v">2026-11-01 · 19:47 → 21:36</div></div>
+    <div class="meta-item"><div class="k">Database</div><div class="v">kgcs-2026-11 (Neo4j 2026.07)</div></div>
+    <div class="meta-item"><div class="k">Pipeline</div><div class="v">devel @ 803dc01 · spec 1.2.1</div></div>
+    <div class="meta-item"><div class="k">Sources</div><div class="v">NVD 11-01 · CWE 5.0 · ATT&amp;CK Oct · KEV 2026.10.30</div></div>
+    <div class="meta-item"><div class="k">Author</div><div class="v">Humbert Costas · Laia Cabot</div></div>
+  </div>
+</div></header>
+
+<section id="summary"><div class="wrap">
+  <div class="kicker">Executive summary</div>
+  <h2 class="h">Everything the chain promises, present and counted</h2>
+  <p class="lede">Download, expected counts, ETL, post-load validation and a hand-read sample, each gated on the previous one. The graph is larger than September's in exactly the places the feeds grew.</p>
+  <div class="kpis">
+    <div class="kpi"><div class="num">7.06 M<sup>=ETL</sup></div><div class="lbl">nodes, equal to the sum of the 16 step counters, label by label</div></div>
+    <div class="kpi"><div class="num">16/16</div><div class="lbl">ETL steps succeeded · 1 h 49 · 0 deadlocks · 0 errors</div></div>
+    <div class="kpi"><div class="num">34/35<sup class="warn">1</sup></div><div class="lbl">post-load Cypher checks; the one red is a CWE 5.0 vocabulary gap in the spec</div></div>
+    <div class="kpi"><div class="num">8/8</div><div class="lbl">offline expected counts (KEV, EPSS, SSVC, ATLAS) equal the graph</div></div>
+    <div class="kpi"><div class="num">77.6 %</div><div class="lbl">of 417,654 CVEs reach a CWE (76.7 % in September)</div></div>
+    <div class="kpi"><div class="num">44,430</div><div class="lbl">CVSS 4.0 scores (≈35 k in September)</div></div>
+  </div>
+  <div class="summary-block">
+    <div>
+      <p>The build was preceded by a repository review and a cleanup; the review is what made the load safe. Comparing feed versions against the September snapshot <b>before</b> loading showed CWE had moved from 4.20 to 5.0 and changed its XML namespace. The loader had the namespace hard-coded and would have reported success with zero weaknesses. One commit later (<span class="mono">803dc01</span>: namespace read from the root element, zero weaknesses fail the step) the catalog loads 984 weaknesses and 1,278 consequences.</p>
+      <p>The second lesson came from the shell, not the data: a PowerShell pipeline whose log redirection failed left a loader process alive, invisible, surviving a <span class="mono">DROP/CREATE DATABASE</span> and racing the real run. Killed, recreated, re-run: this report describes a single-process build.</p>
+    </div>
+    <div class="callout"><div class="t">Why a new database</div><div class="d"><span class="mono">MERGE</span> is idempotent for what exists but never deletes what upstream retired, so reloading over <span class="mono">kgcs-v12</span> could not yield a clean delta. <span class="mono">kgcs-v12</span> stays as the spec 1.2.1 reference; <span class="mono">kgcs-2026-11</span> is November.</div></div>
+  </div>
+</div></section>
+
+<section id="pipeline"><div class="wrap">
+  <div class="kicker">Pipeline &amp; timing</div>
+  <h2 class="h">Four gates, then sixteen steps</h2>
+  <p class="lede">The procedure in <code>docs/fresh-load.md</code>. Each block ran only after the previous one passed; the raw-feed diff is the step that paid for itself.</p>
+  <div class="timeline">
+    <div class="step"><div class="step-dot-col"><div class="step-num">0</div><div class="step-line"></div></div><div class="step-body"><div class="step-head"><div class="step-title">Preflight &amp; fresh raw data <span class="pill pill-pass">PASS</span></div><div class="step-time">18:31 → 18:33</div></div><div class="step-desc">September raw snapshotted outside the repo, <code>data/raw</code> emptied, 13/13 standards dated today. Feed diff: <b>CWE 4.20 → 5.0 (cwe-7 → cwe-8)</b>, CPE chunks 17 → 18, CPE-MATCH 71 → 74, NVD-2026 53,316 → 83,505 entries, KEV 1,726 → 1,766, ATT&amp;CK ICS objects 338 → 560. CAPEC, D3FEND, ATLAS unchanged.</div></div></div>
+    <div class="step"><div class="step-dot-col"><div class="step-num">1</div><div class="step-line"></div></div><div class="step-body"><div class="step-head"><div class="step-title">Expected counts, offline <span class="pill pill-pass">PASS</span></div><div class="step-time">19:08</div></div><div class="step-desc">From the raw files with the loaders' own transforms: KEV <b>1,765</b> of 1,766, EPSS <b>398,784</b>, SSVC <b>210,258</b>, ATLAS 264 nodes / 718 edges, ADAPTED_FROM 44. Consistent with September (+54 KEV, +30 k EPSS tracking the +30 k 2026 CVEs).</div></div></div>
+    <div class="step"><div class="step-dot-col"><div class="step-num">2</div><div class="step-line"></div></div><div class="step-body"><div class="step-head"><div class="step-title">ETL into kgcs-2026-11 <span class="pill pill-pass">16/16</span></div><div class="step-time">19:47 → 21:36 · 1 h 49</div></div><div class="step-desc"><b>cpe</b> 71 min (2,538,896 n / 31,775,150 r) · <b>cve</b> 28 min (3,339,362 n / 9,281,356 r) · <b>cvss</b> 4 min (566,912) · kev / epss / ssvc 4 min · <b>cwe</b> 3 min (984 n, 362,316 CAUSED_BY, 1,278 consequences) · capec, attck, atlas, d3fend, car, shield, engage, build_metadata &lt; 1 min. Log kept at INFO; 0 <code>DeadlockDetected</code>.</div></div></div>
+    <div class="step"><div class="step-dot-col"><div class="step-num">3</div><div class="step-line"></div></div><div class="step-body"><div class="step-head"><div class="step-title">Post-load validation <span class="pill pill-pass">PASS</span> <span class="pill pill-note">2 explained reds</span></div><div class="step-time">21:41 → 21:54</div></div><div class="step-desc">SHACL TBox 10/10 + core invariants · 27/27 constraints · Cypher <b>34/35</b> (F3) · decision/ATLAS ABox SHACL <b>CONFORMS</b>, 1 known warning (F4) · compare-v12 <b>EQUAL 8/8</b> · graph-quality 5/6 against the September file, <b>6/6</b> against today's expected (F2) · minimums 12/12 · exactly one BuildMetadata.</div></div></div>
+    <div class="step"><div class="step-dot-col"><div class="step-num">4</div></div><div class="step-body"><div class="step-head"><div class="step-title">Sample, not just aggregates <span class="pill pill-pass">5/5</span></div><div class="step-time">21:52 → 21:56</div></div><div class="step-desc">Five records read on the new database next to the evidence that produced them: a recent KEV CVE with CVSS 3.1 + 4.0, EPSS, SSVC and CWE; the three out-of-vocabulary consequences; the October ATT&amp;CK additions and retirements; the remapped ADAPTED_FROM; the BuildMetadata node.</div></div></div>
+  </div>
+</div></section>
+
+<section id="integrity"><div class="wrap">
+  <div class="kicker">Data integrity</div>
+  <h2 class="h">Reconciled, not just reported</h2>
+  <p class="lede">The stats script omits two labels (known gap P3); the ground truth is a label count on the graph. It matches the ETL counters exactly, including the 2,007,229 configuration nodes the stats table hides.</p>
+  <div class="tbl-wrap"><table>
+    <tr><th>Label</th><th class="num">Graph</th><th>Source step</th><th>Reconciles</th></tr>
+    <tr><td><span class="sw" style="background:var(--cpe)"></span>Platform + PlatformConfiguration</td><td class="num">2,538,896</td><td>cpe nodes_created 2,538,896</td><td class="delta-up">exact</td></tr>
+    <tr><td><span class="sw" style="background:var(--cve)"></span>Vulnerability + Reference + VulnerabilityConfiguration(+Node)</td><td class="num">3,339,362</td><td>cve nodes_created 3,339,362</td><td class="delta-up">exact</td></tr>
+    <tr><td><span class="sw" style="background:var(--cve)"></span>Score</td><td class="num">566,912</td><td>cvss</td><td class="delta-up">exact</td></tr>
+    <tr><td><span class="sw" style="background:var(--kev)"></span>KevEntry · EpssScore · SsvcDecision</td><td class="num">1,765 · 398,784 · 210,258</td><td>kev · epss · ssvc = step 1 expected</td><td class="delta-up">exact</td></tr>
+    <tr><td><span class="sw" style="background:var(--cwe)"></span>Weakness · Consequence (CWE+CAPEC)</td><td class="num">984 · 2,092</td><td>cwe 984 / 1,278 + capec 814</td><td class="delta-up">exact</td></tr>
+    <tr><td><span class="sw" style="background:var(--capec)"></span>AttackPattern</td><td class="num">615</td><td>capec</td><td class="delta-up">exact</td></tr>
+    <tr><td><span class="sw" style="background:var(--attck)"></span>Tactic · Technique · SubTechnique</td><td class="num">39 · 383 · 552</td><td>attck 974</td><td class="delta-up">exact</td></tr>
+    <tr><td><span class="sw" style="background:var(--atlas)"></span>Atlas* (4 labels)</td><td class="num">264</td><td>atlas</td><td class="delta-up">exact</td></tr>
+    <tr><td><span class="sw" style="background:var(--d3fend)"></span>DefensiveTechnique · <span class="sw" style="background:var(--car)"></span>DetectionAnalytic · <span class="sw" style="background:var(--shield)"></span>DeceptionTechnique · <span class="sw" style="background:var(--engage)"></span>EngagementConcept</td><td class="num">145 · 102 · 33 · 45</td><td>d3fend · car · shield · engage</td><td class="delta-up">exact</td></tr>
+    <tr><td>BuildMetadata</td><td class="num">1</td><td>build_metadata (13 source snapshots)</td><td class="delta-up">exact</td></tr>
+    <tr><td><b>Total</b></td><td class="num"><b>7,061,232</b></td><td>Σ nodes_created</td><td class="delta-up"><b>exact</b></td></tr>
+  </table></div>
+  <div class="code"><span class="c">// ground truth, read-only, on kgcs-2026-11</span>
+<span class="k">MATCH</span> (n) <span class="k">RETURN</span> count(n) <span class="k">AS</span> total;                                  <span class="c">// 7061232</span>
+<span class="k">MATCH</span> (n) <span class="k">WITH</span> labels(n)[0] <span class="k">AS</span> l <span class="k">RETURN</span> l, count(*) <span class="k">ORDER BY</span> l;    <span class="c">// 25 labels, all equal to stats.json + the 2 omitted ones</span></div>
+</div></section>
+
+<section id="compare"><div class="wrap">
+  <div class="kicker">vs. September</div>
+  <h2 class="h">What grew, what changed, what stayed</h2>
+  <p class="lede">Against the spec 1.2.1 reference build (<code>kgcs-v12</code>, 2026-09-28). Growth follows the feeds; the structural moves are CWE 5.0 and the October ATT&amp;CK release.</p>
+  <div class="tbl-wrap"><table>
+    <tr><th>Item</th><th class="num">2026-09-28</th><th class="num">2026-11-01</th><th class="num">Δ</th><th>Why</th></tr>
+    <tr><td><span class="sw" style="background:var(--cpe)"></span>cpe nodes / MATCHES_PLATFORM</td><td class="num">2,486,924 / 30,339,212</td><td class="num">2,538,896 / 31,775,150</td><td class="num delta-up">+2.1 % / +4.7 %</td><td>18/74 chunks (17/71)</td></tr>
+    <tr><td><span class="sw" style="background:var(--cve)"></span>cve nodes / rels</td><td class="num">3,203,586 / 8,988,736</td><td class="num">3,339,362 / 9,281,356</td><td class="num delta-up">+4.2 %</td><td>NVD-2026 53 k → 83 k</td></tr>
+    <tr><td><span class="sw" style="background:var(--cve)"></span>CVSS scores</td><td class="num">530,774</td><td class="num">566,912</td><td class="num delta-up">+6.8 %</td><td>4.0: 44,430</td></tr>
+    <tr><td><span class="sw" style="background:var(--kev)"></span>KEV / EPSS / SSVC</td><td class="num">1,711 / 368,628 / 182,047</td><td class="num">1,765 / 398,784 / 210,258</td><td class="num delta-up">+54 / +30 k / +28 k</td><td>= offline expected; KEV drops 15 → 1</td></tr>
+    <tr><td><span class="sw" style="background:var(--cwe)"></span>Weakness / CAUSED_BY</td><td class="num">969 / 331,107</td><td class="num">984 / 362,316</td><td class="num delta-up">+15 / +9.4 %</td><td>CWE 5.0 (F1, F3)</td></tr>
+    <tr><td><span class="sw" style="background:var(--attck)"></span>Technique / SubTechnique / PART_OF</td><td class="num">378 / 540 / 436</td><td class="num">383 / 552 / 441</td><td class="num delta-up">+7 −2 / +12 / +5</td><td>October release (F2)</td></tr>
+    <tr><td><span class="sw" style="background:var(--capec)"></span>CAPEC · <span class="sw" style="background:var(--atlas)"></span>ATLAS · <span class="sw" style="background:var(--d3fend)"></span>D3FEND · CAR · SHIELD · ENGAGE</td><td class="num">—</td><td class="num">identical</td><td class="num delta-eq">0</td><td>feeds unchanged</td></tr>
+    <tr><td>ETL duration</td><td class="num">1 h 17</td><td class="num">1 h 49</td><td class="num delta-dn">+32 min</td><td>cpe step 71 min (F6)</td></tr>
+  </table></div>
+</div></section>
+
+<section id="chain"><div class="wrap">
+  <div class="kicker">Causal chain coverage</div>
+  <h2 class="h">How much of the graph actually reaches its verdict</h2>
+  <p class="lede">CPE → CVE/CVSS → CWE → CAPEC → ATT&amp;CK → defenses. The gold mark is the September value.</p>
+  <div class="cov">
+    <div class="cov-row"><div class="cov-lbl">CVE → CWE<small>CAUSED_BY present</small></div><div class="bar"><i style="width:77.55%;background:var(--cwe)"></i><b style="left:76.7%"></b></div><div class="cov-val">77.55 %<small>323,894 of 417,654</small></div></div>
+    <div class="cov-row"><div class="cov-lbl">CVE with CVSS<small>any version</small></div><div class="bar"><i style="width:94.37%;background:var(--cve)"></i><b style="left:94.7%"></b></div><div class="cov-val">94.37 %<small>5.63 % without</small></div></div>
+    <div class="cov-row"><div class="cov-lbl">CVE with CVSS 4.0<small>44,430 scores</small></div><div class="bar"><i style="width:10.64%;background:var(--cve)"></i><b style="left:9.0%"></b></div><div class="cov-val">10.64 %<small>≈9 % in Sept</small></div></div>
+    <div class="cov-row"><div class="cov-lbl">KEV CVEs in graph<small>HAS_KEV_ENTRY</small></div><div class="bar"><i style="width:99.94%;background:var(--kev)"></i><b style="left:99.1%"></b></div><div class="cov-val">99.94 %<small>1,765 of 1,766</small></div></div>
+    <div class="cov-row"><div class="cov-lbl">ATLAS → ATT&amp;CK<small>ADAPTED_FROM resolved</small></div><div class="bar"><i style="width:100%;background:var(--atlas)"></i><b style="left:100%"></b></div><div class="cov-val">44 / 44<small>1 via revoked-by remap</small></div></div>
+  </div>
+  <div class="tbl-wrap"><table>
+    <tr><th>CVSS version</th><th class="num">Scores</th><th>CVE → CWE skipped</th><th class="num">Count</th></tr>
+    <tr><td>2.0</td><td class="num">197,044</td><td>NVD-CWE-* placeholders (noinfo / Other)</td><td class="num">66,975</td></tr>
+    <tr><td>3.0</td><td class="num">54,791</td><td>Real CWE ids not a Weakness in 5.0 (Categories, Views)</td><td class="num">14,496</td></tr>
+    <tr><td>3.1</td><td class="num">270,647</td><td colspan="2"></td></tr>
+    <tr><td>4.0</td><td class="num">44,430</td><td colspan="2"></td></tr>
+  </table></div>
+</div></section>
+
+<section id="findings"><div class="wrap">
+  <div class="kicker">Findings</div>
+  <h2 class="h">Six things surfaced by looking closely</h2>
+  <div class="finding"><div class="finding-idx">F1</div><div><div class="finding-title">CWE 5.0 moved the catalog namespace <span class="tag">fixed · 803dc01</span></div><div class="finding-body"><code>cwe-7</code> → <code>cwe-8</code>. <code>load_cwe.py</code> had it hard-coded and would have iterated zero <code>Weakness</code> elements and reported success. Now the namespace is read from the root element and zero weaknesses fail the step; three tests cover it. CWE 5.0 also removes <code>Category</code> (422 → 0) for <code>Groupings</code>/<code>Dimensions</code> (431/395) — a spec-level decision, not loaded today.</div></div></div>
+  <div class="finding"><div class="finding-idx">F2</div><div><div class="finding-title">October ATT&amp;CK release: +7 / −2 techniques <span class="tag">verified</span></div><div class="finding-body">New: T1696 Anti-Automation Evasion (2 subs), T1697 Steal Application Specific Passwords, <b>T1698 Indirect Prompt Injection, T1699 Direct Prompt Injection, T1700 AI-Enabled Exfiltration</b> (enterprise), T1476 (mobile), T1701 Command and Scripting Interpreter (ICS, 6 subs) replacing T0807 and T0853. 378 + 7 − 2 = 383 and PART_OF 436 + 5 = 441, which is the "FAIL" against the September expected file and a PASS against today's. ATT&amp;CK now has native AI techniques next to ATLAS.</div></div></div>
+  <div class="finding"><div class="finding-idx">F3</div><div><div class="finding-title">Three consequence values outside the spec 1.2.1 vocabulary <span class="tag">spec backlog</span></div><div class="finding-body">CWE 5.0 introduces <code>DoS: Prevent Access</code> (CWE-1260-C1, CWE-1476-C1 — the latter a new weakness) and <code>Undefined Behavior</code> (CWE-1335-C2). Loaded verbatim as designed; both the Cypher check and SHACL flag them. The fix is a vocabulary update in <code>kgcs-spec</code> and a pin bump — the only red check of the run.</div></div></div>
+  <div class="finding"><div class="finding-idx">F4</div><div><div class="finding-title">One ADAPTED_FROM warning, known and legitimate <span class="tag">known</span></div><div class="finding-body">AML.T0073 <i>Impersonation</i> cites T1656, revoked in the bundle (<code>revoked-by → T1684.001</code>, same name). The loader remapped and reported it; same case as <code>spec-v1.2-deltas.md</code> §"44, not 43". Confirmed in <code>enterprise-attack.json</code>.</div></div></div>
+  <div class="finding"><div class="finding-idx">F5</div><div><div class="finding-title">A second loader process was alive during the first attempt <span class="tag">procedure</span></div><div class="finding-body">A PowerShell pipeline whose <code>Tee-Object</code> failed to open its file still started <code>python.exe</code>; it survived <code>DROP/CREATE DATABASE</code> (driver retries) and raced the real run — visible as <code>DeadlockDetected</code> retries between two <code>clientId</code>s, in a loader that has no concurrency. Killed, database recreated, re-run from zero. The procedure now checks <code>Get-Process python*</code> before launching and after cancelling.</div></div></div>
+  <div class="finding"><div class="finding-idx">F6</div><div><div class="finding-title">The cpe step took 71 minutes (≈45 in September) <span class="tag">not diagnosed</span></div><div class="finding-body">For +4.7 % more MATCHES_PLATFORM. Same Neo4j instance also hosts <code>kgcs-v12</code> and <code>kgcs-demo</code>; no Bolt-level timing was kept. Worth a look before the next run, not before this one.</div></div></div>
+</div></section>
+
+<section id="scope"><div class="wrap">
+  <div class="kicker">Scope</div>
+  <h2 class="h">What this pass does not claim</h2>
+  <ul class="plain">
+    <li><b>Raw download byte total</b> — <code>download.log</code> not kept; recorded only "13/13 standards dated today" and the per-feed version diff.</li>
+    <li><b>Cause of the slower cpe step</b> (F6).</li>
+    <li><b>Neo4j server version</b> taken from the instance already hosting <code>kgcs-v12</code>, not read from the server during this run.</li>
+    <li><b>CAUSED_BY provenance</b> read by hand on two CVEs; the Cypher check <code>caused_by_provenance_aligned</code> covers all 362,316.</li>
+    <li><b>kgcs-server</b> was not pointed at this database: its spec pin is still 1.0.0 and knows nothing of KEV, EPSS, SSVC or ATLAS.</li>
+    <li><b>Chain coverage</b> is measured at the CVE → CWE hop; CWE → CAPEC → ATT&amp;CK coverage is unchanged from the September report and was not re-measured.</li>
+  </ul>
+</div></section>
+
+<section id="appendix"><div class="wrap">
+  <div class="kicker">Appendix</div>
+  <h2 class="h">Environment &amp; provenance</h2>
+  <div class="tbl-wrap"><table>
+    <tr><th>Source</th><th>Snapshot in BuildMetadata</th></tr>
+    <tr><td><span class="sw" style="background:var(--cpe)"></span>CPE / CPE-MATCH</td><td class="mono">2026-10-30T23:50:01Z .. 2026-10-31T23:48:52Z · 18 / 74 chunks</td></tr>
+    <tr><td><span class="sw" style="background:var(--cve)"></span>CVE / CVSS</td><td class="mono">2026-10-21T03:05:10Z .. 2026-11-01T10:00:04Z · 26 files</td></tr>
+    <tr><td><span class="sw" style="background:var(--cwe)"></span>CWE</td><td class="mono">5.0 (2026-10-28, xmlns cwe-8)</td></tr>
+    <tr><td><span class="sw" style="background:var(--capec)"></span>CAPEC</td><td class="mono">3.9</td></tr>
+    <tr><td><span class="sw" style="background:var(--attck)"></span>ATT&amp;CK</td><td class="mono">download 2026-11-01 · modified-max 2026-10-13 · enterprise / ics / mobile</td></tr>
+    <tr><td><span class="sw" style="background:var(--atlas)"></span>ATLAS</td><td class="mono">2026.09</td></tr>
+    <tr><td><span class="sw" style="background:var(--d3fend)"></span>D3FEND</td><td class="mono">1.3.0</td></tr>
+    <tr><td><span class="sw" style="background:var(--car)"></span>CAR · <span class="sw" style="background:var(--shield)"></span>SHIELD · <span class="sw" style="background:var(--engage)"></span>ENGAGE</td><td class="mono">download 2026-11-01</td></tr>
+    <tr><td><span class="sw" style="background:var(--kev)"></span>KEV · EPSS · SSVC</td><td class="mono">2026.10.30 (1,766) · 2026-11-01 model v2026.06.15 · NVD ADP 2.0.3</td></tr>
+    <tr><td>Pipeline</td><td class="mono">devel @ 803dc015 · spec 1.2.1 (sync_spec --check OK) · Python 3.14 · 112 tests green</td></tr>
+  </table></div>
+  <div class="files">
+    <div class="file"><div class="n">summary.json</div><div class="d">machine-comparable record (schema v1)</div></div>
+    <div class="file"><div class="n">etl.log</div><div class="d">16 steps, counters and timing (INFO)</div></div>
+    <div class="file"><div class="n">postload.log</div><div class="d">SHACL TBox + 27 constraints + 35 Cypher checks</div></div>
+    <div class="file"><div class="n">shacl-v12.log · compare-v12.log</div><div class="d">ABox SHACL on decision/ATLAS · expected vs graph</div></div>
+    <div class="file"><div class="n">expected-graph.json · graph-quality.log</div><div class="d">chain edge expectations from today's raw, 6/6</div></div>
+    <div class="file"><div class="n">stats.json · stats.log</div><div class="d">label / relationship counts, minimums</div></div>
+    <div class="file"><div class="n">README.md</div><div class="d">this report in prose, findings F1–F6</div></div>
+    <div class="file"><div class="n">../2026-09-28-kgcs-v12 · ../2026-09-06-kgcs-demo</div><div class="d">reference builds, summary.json only</div></div>
+  </div>
+</div></section>
+
+<footer><div class="wrap">kgcs-pipeline · docs/fresh-load/runs/2026-11-01-kgcs-2026-11 · Humbert Costas with Laia Cabot · MotherHacker / Ariadna-KGCS · Apache 2.0 (code); NVD and MITRE data under their own terms.</div></footer>
+</body>
+</html>
