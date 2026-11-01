@@ -87,7 +87,29 @@ from .consequences import (
 
 logger = logging.getLogger(__name__)
 
+# Default CWE XML namespace (schema v7, CWE 4.x). CWE 5.0 (2026-10) moved to
+# cwe-8, so the real namespace is read from the catalog's root element; this
+# constant is only the fallback for callers that build elements by hand.
 _CWE_NS = "http://cwe.mitre.org/cwe-7"
+_CWE_NS_RE = re.compile(r"^\{(http://cwe\.mitre\.org/cwe-\d+)\}Weakness_Catalog$")
+
+
+def detect_cwe_namespace(xml_path: Path) -> str:
+    """Return the CWE namespace declared by the catalog's root element.
+
+    Fails hard when the root is not a ``Weakness_Catalog`` in a
+    ``http://cwe.mitre.org/cwe-N`` namespace: a silent fallback would make
+    the loader iterate zero Weakness elements and report success.
+    """
+    for _, elem in ET.iterparse(str(xml_path), events=("start",)):
+        m = _CWE_NS_RE.match(elem.tag)
+        if not m:
+            raise ValueError(
+                f"Unexpected CWE catalog root {elem.tag!r} in {xml_path.name}; "
+                "expected {http://cwe.mitre.org/cwe-N}Weakness_Catalog"
+            )
+        return m.group(1)
+    raise ValueError(f"Empty CWE catalog: {xml_path}")
 _NVD_SKIP_PREFIXES = ("NVD-CWE-",)
 
 # sourceRoles vocabulary (ADR-0002). The declared ADP list lives in the spec
@@ -158,9 +180,9 @@ SET r.sources     = row.sources,
 # XML extraction helpers
 # ---------------------------------------------------------------------------
 
-def _weakness_record(elem: ET.Element) -> Tuple[Dict, List[Dict]]:
+def _weakness_record(elem: ET.Element, ns_uri: str = _CWE_NS) -> Tuple[Dict, List[Dict]]:
     """Transform one complete Weakness element into (node row, consequence rows)."""
-    ns = f"{{{_CWE_NS}}}"
+    ns = f"{{{ns_uri}}}"
     cwe_id = f"CWE-{elem.get('ID', '')}"
     mapping_notes = elem.find(f"{ns}Mapping_Notes")
     usage = mapping_notes.findtext(f"{ns}Usage") if mapping_notes is not None else None
@@ -203,14 +225,16 @@ def _iter_weakness_records(
     xml_path: Path,
 ) -> Generator[Tuple[Dict, List[Dict]], None, None]:
     """Stream (node row, consequence rows) per Weakness of the CWE XML."""
-    ns = f"{{{_CWE_NS}}}"
+    ns_uri = detect_cwe_namespace(xml_path)
+    logger.info(f"[CWE] Catalog namespace: {ns_uri}")
+    ns = f"{{{ns_uri}}}"
     tag_weakness = f"{ns}Weakness"
     # Top-level entries are released after use; Categories / Views are not loaded.
     releasable = {tag_weakness, f"{ns}Category", f"{ns}View", f"{ns}External_Reference"}
     try:
         for _, elem in ET.iterparse(str(xml_path), events=("end",)):
             if elem.tag == tag_weakness and elem.get("ID"):
-                yield _weakness_record(elem)
+                yield _weakness_record(elem, ns_uri)
             if elem.tag in releasable:
                 elem.clear()   # release memory
     except Exception as exc:
@@ -480,6 +504,14 @@ class CWELoader(AbstractETL):
                 nodes_created += r.get("nodes_created", 0)
                 errors.extend(r.get("errors", []))
                 batch = []
+
+            if not loaded_cwe_ids:
+                # Zero Weakness elements = wrong namespace or broken file, never
+                # a legitimate catalog. Fail hard before any downstream step.
+                msg = f"No Weakness elements parsed from {xml_path.name}"
+                self.log_error(f"[CWE] {msg}")
+                result["errors"] = errors + [msg]
+                return result
 
             result["stats"]["nodes_created"] = nodes_created
             self.log_success(

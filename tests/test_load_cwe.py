@@ -230,7 +230,7 @@ def test_equally_new_records_keep_the_modified_lists(tmp_path: Path, fake_writer
 # spec 1.1.0: Weakness enrichment + Consequence sub-nodes
 # ---------------------------------------------------------------------------
 
-from etl.load_cwe import _CYPHER_WEAKNESS, _iter_weakness_records  # noqa: E402
+from etl.load_cwe import _CYPHER_WEAKNESS, _iter_weakness_records, detect_cwe_namespace  # noqa: E402
 
 _CWE79 = """
 <Weakness ID="79" Name="XSS" Abstraction="Base" Structure="Simple" Status="Stable">
@@ -285,14 +285,14 @@ _CWE20 = """
 </Weakness>"""
 
 
-def _cwe_catalog(raw: Path, *weaknesses: str) -> Path:
+def _cwe_catalog(raw: Path, *weaknesses: str, schema: int = 7, version: str = "4.20") -> Path:
     cwe = raw / "CWE"
     cwe.mkdir(parents=True, exist_ok=True)
-    path = cwe / "cwec_v4.20.xml"
+    path = cwe / f"cwec_v{version}.xml"
     path.write_text(
         '<?xml version="1.0" encoding="UTF-8"?>'
-        '<Weakness_Catalog Name="CWE" Version="4.20" Date="2026-04-30" '
-        'xmlns="http://cwe.mitre.org/cwe-7" xmlns:xhtml="http://www.w3.org/1999/xhtml">'
+        f'<Weakness_Catalog Name="CWE" Version="{version}" Date="2026-04-30" '
+        f'xmlns="http://cwe.mitre.org/cwe-{schema}" xmlns:xhtml="http://www.w3.org/1999/xhtml">'
         f'<Weaknesses>{"".join(weaknesses)}</Weaknesses>'
         '<Categories><Category ID="16" Name="Configuration" Status="Obsolete"/></Categories>'
         "</Weakness_Catalog>",
@@ -400,3 +400,31 @@ def test_cwe_load_is_idempotent_and_prunes_removed_records(tmp_path: Path, graph
     assert set(graph_sim.consequences()) == {"CWE-79-C1"}
     assert graph_sim.edges == {("CWE-79", "CWE-79-C1")}
     assert "likelihoodOfExploit" not in graph_sim.nodes[("Weakness", "CWE-79")]
+
+
+# --- CWE 5.0 moved the catalog to the cwe-8 namespace (2026-10) ----------------
+
+def test_namespace_is_read_from_the_catalog_root(tmp_path: Path):
+    v7 = _cwe_catalog(tmp_path / "a", _CWE79)
+    v8 = _cwe_catalog(tmp_path / "b", _CWE79, schema=8, version="5.0")
+    assert detect_cwe_namespace(v7) == "http://cwe.mitre.org/cwe-7"
+    assert detect_cwe_namespace(v8) == "http://cwe.mitre.org/cwe-8"
+    # Same catalog content, either schema: identical node rows.
+    assert [n for n, _ in _iter_weakness_records(v7)] == [n for n, _ in _iter_weakness_records(v8)]
+
+
+def test_unknown_catalog_root_fails_hard(tmp_path: Path):
+    path = tmp_path / "cwec_v9.9.xml"
+    path.write_text('<Catalog xmlns="http://example.org/not-cwe"><Weakness ID="1"/></Catalog>', encoding="utf-8")
+    with pytest.raises(ValueError, match="Weakness_Catalog"):
+        detect_cwe_namespace(path)
+
+
+def test_zero_weaknesses_is_a_failed_load(tmp_path: Path, graph_sim):
+    raw = tmp_path / "raw"
+    _cwe_catalog(raw)                      # valid catalog, no Weakness elements
+    (raw / "CVE").mkdir()
+    result = CWELoader(str(raw), graph_sim, batch_size=100).run()
+    assert result["success"] is False
+    assert any("No Weakness elements" in e for e in result["errors"])
+    assert graph_sim.nodes == {}
