@@ -1,18 +1,20 @@
 # kgcs-pipeline
 
-Builds the KGCS Neo4j graph from the 10 authoritative sources (NVD and MITRE feeds), following the causal chain defined by [kgcs-spec](https://github.com/Ariadna-KGCS/kgcs-spec). Part of the [Ariadna-KGCS organization](https://github.com/Ariadna-KGCS).
+Builds the KGCS Neo4j graph from 13 sources (the ten standards from the NVD and MITRE feeds, plus the CISA KEV catalog, the FIRST EPSS scores and MITRE ATLAS; SSVC is read from the NVD files), following the causal chain defined by [kgcs-spec](https://github.com/Ariadna-KGCS/kgcs-spec). Part of the [Ariadna-KGCS organization](https://github.com/Ariadna-KGCS).
 
 ## How it works
 
 ```mermaid
 flowchart LR
-    subgraph Sources["10 authoritative sources"]
+    subgraph Sources["13 sources"]
         NVD["NVD feed"]
         MITRE["MITRE feeds"]
+        DEC["KEV + EPSS feeds"]
     end
     SPEC(["kgcs-spec pin\n(sync_spec.py)"]) -.-> ETL
     NVD --> DL["download.py"]
     MITRE --> DL
+    DEC --> DL
     DL --> ETL["run_all_etl.py\ncausal-chain order:\nconstraints -> nodes -> relationships"]
     ETL --> NEO[("Neo4j\nKGCS graph")]
 
@@ -37,7 +39,7 @@ Requires Python 3.11+ and a running Neo4j instance (2026.05.x recommended; Commu
 ## Layout
 
 - `scripts/` — entrypoints `download.py`, `download_schemas.py`, `run_all_etl.py`, `sync_spec.py` (run from repo root; `data/raw` paths are CWD-relative)
-- `downloaders/` — per-source download clients (NVD, MITRE) + universal downloader and validators
+- `downloaders/` — per-source download clients (NVD, MITRE, KEV, EPSS) + universal downloader and validators
 - `etl/` — constraint init + per-standard loaders, executed in causal-chain order
 - `validation/` — SHACL/post-load validation + graph stats (`extract_neo4j_stats.py`)
 - `utils/` — shared HTTP client (retries, backoff)
@@ -75,7 +77,7 @@ pre-release validation run **without** `--partial-load`.
 
 ## Status
 
-`devel` builds against `kgcs-spec` **1.2.1** (`sync_spec.py --check` green). Last full load validated 2026-09-28 on Neo4j `kgcs-v12`: 16 ETL steps (constraints, the chain, KEV/EPSS/SSVC decision leaves, ATLAS, build metadata; log 2026-09-28 00:41→01:59), post-load checks and expected deltas in `docs/spec-v1.2-deltas.md`. CI (`Test` workflow): `sync_spec.py` + `--check` + `pytest tests/` (109 passed, 2026-11-01). `main` still holds the 1.0.0-era pipeline until the 1.2.1 release PR lands. Pre-seed design notes live in `docs/historical/`.
+`devel` builds against `kgcs-spec` **1.2.1** (`sync_spec.py --check` green). Last full load validated 2026-11-01 on Neo4j `kgcs-2026-11` (verdict GREEN: 16/16 ETL steps — constraints, the chain, KEV/EPSS/SSVC decision leaves, ATLAS, build metadata — 7,061,232 nodes reconciled, 34/35 post-load checks; the one red, `cwe_consequence_vocabulary`, flags CWE 5.0 values outside the spec 1.2.1 vocabulary; details in `docs/fresh-load/runs/2026-11-01-kgcs-2026-11/README.md`). Previous full load: 2026-09-28 on `kgcs-v12`; expected deltas in `docs/spec-v1.2-deltas.md`. CI (`Test` workflow): `sync_spec.py` + `--check` + `pytest tests/` (109 passed, 2026-11-01). `main` still holds the 1.0.0-era pipeline until the 1.2.1 release PR lands. Pre-seed design notes live in `docs/historical/`.
 
 ## License
 
