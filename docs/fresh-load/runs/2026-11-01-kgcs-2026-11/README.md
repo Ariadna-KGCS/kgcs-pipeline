@@ -73,7 +73,7 @@ recreated, this run is single-process (0 deadlocks). Procedure updated: check
 
 ## Sample (step 4, read-only, via the MCP connector with `USE`)
 
-1. **CVE-2026-114625** (Arista VeloCloud, published 2026-10-22): CVSS 3.1 **and
+1. **CVE-2026-114625** (published 2026-10-22): CVSS 3.1 **and
    4.0**; KEV added 2026-10-23 (catalog 2026.10.30); EPSS 2026-11-01; SSVC
    `active / automatable=no / total`; `CAUSED_BY` → CWE-89.
 2. **Consequences out of vocabulary**: exactly the 3 of F3, read with scopes

@@ -1,15 +1,18 @@
 # Fresh load — procedure
 
-How to rebuild the KGCS graph from scratch on a **new** Neo4j database and
-prove the result, in four gated steps. Every step fails hard before the next
-one starts; "it ran" is never the acceptance criterion. Each run leaves its
-evidence in `docs/fresh-load/runs/<date>-<database>/` (see
+How to rebuild the KGCS graph from scratch on a **new** Neo4j database, prove
+the result and archive what was built, in gated steps 0 to 6. Every step fails
+hard before the next one starts; "it ran" is never the acceptance criterion.
+Each run leaves its evidence in `docs/fresh-load/runs/<date>-<database>/` (see
 [`fresh-load/README.md`](fresh-load/README.md)), so two builds months apart
 can be compared line by line.
 
 Commands are PowerShell, run from the repo root with the repo's Python
 (`.\.conda\python.exe` here; `python` elsewhere). `pipeline-execution-guide.md`
 documents each script's options; this page is the order and the gates.
+Placeholders: `<run-dir>` is `docs\fresh-load\runs\<date>-<database>`;
+`<archive-root>` is a folder you choose, outside the repository, that outlives
+the machine's working data (step 6).
 
 ## Step 0 — Preflight and fresh raw data
 
@@ -19,15 +22,23 @@ passes the download validation (it only checks "directory has files"), and a
 second `cwec_v*.xml` or an extra chunk directory is silently picked up by the
 loaders.
 
+The previous build is already archived: its step 6 copied its `data/raw`,
+`data/schemas` and run directory to `<archive-root>\standards\<previous-YYYYMMDD>\`
+with a `manifest.csv`. Start from that fact, check it, then start empty:
+
 ```powershell
 git status --short                       # clean tree, on the branch you mean to build from
 python scripts/sync_spec.py --check              # spec pin materialized and matching SPEC_VERSION
 python -m pytest tests -q                # all green
 
-# Snapshot the previous raw data OUTSIDE the repo, then start empty
-Move-Item data\raw <local-archive>\raw-<previous-date>
+# The previous build must already be archived (step 6 of its run); never delete data\raw before
+$previous = '<archive-root>\standards\<previous-YYYYMMDD>'
+Test-Path "$previous\manifest.csv"       # must print True; if False, do step 6 of the previous build first
+
+Remove-Item data\raw -Recurse -Force
 New-Item -ItemType Directory data\raw | Out-Null
 python scripts/download.py --standard all 2>&1 | Out-File -Encoding utf8 <run-dir>\download.log
+python scripts/download_schemas.py       # so the schemas archived in step 6 are this build's own
 ```
 
 Gate — every standard has files dated today, and exactly one CWE and one
@@ -41,8 +52,9 @@ Get-ChildItem data\raw -Directory | ForEach-Object {
 Get-ChildItem data\raw\CWE, data\raw\CAPEC -File | Select-Object Name, Length
 ```
 
-Then **diff the feed versions against the previous snapshot** before loading
-anything (repo rule: verify external schemas from the downloaded files). At
+Then **diff the feed versions against the previous snapshot** (the archived
+`raw\` of the previous build) before loading anything (repo rule: verify
+external schemas from the downloaded files). At
 minimum: CWE catalog `Version=` and `xmlns`, CAPEC `Version=`, ATT&CK bundle
 object counts, KEV `catalogVersion`/`count`, NVD 2026 `totalResults`, CPE and
 CPE-MATCH chunk counts. A namespace or major-version change means reading the
@@ -89,7 +101,7 @@ the system code page) and follow them from a second window with
 
 ```powershell
 $env:NEO4J_DATABASE = '<database>'       # session only; .env keeps pointing at the reference db
-python scripts/run_all_etl.py --dry-run          # lists every step and the target database
+python scripts/run_all_etl.py --dry-run          # lists every step (it does not print the target database)
 python scripts/run_all_etl.py 2>&1 | Out-File -Encoding utf8 <run-dir>\etl.log
 ```
 
@@ -134,5 +146,105 @@ new database (via the read-only MCP connector or Neo4j Browser):
 - the single `BuildMetadata` node: source versions match step 0.
 
 Write what was checked **and what was not** into the run's `summary.json` and
-`README.md`. Then `gitleaks detect --source docs\fresh-load` and commit the run
-directory.
+`README.md`. The report (step 5) reads them, so use their conventions: the
+keys of the schema in [`fresh-load/README.md`](fresh-load/README.md), and in
+`README.md` the headings `## Findings` (paragraphs that start
+`**F1 — title.**`), `## Sample` (a numbered list) and `## Not verified` (a
+bullet list).
+
+## Step 5 — Report
+
+Why: the human-readable record must come from the machine-comparable one, or the
+two drift. `scripts/build_run_report.py` reads `<run-dir>\summary.json` (every
+figure) and `<run-dir>\README.md` (findings, sample, not verified) and writes
+`<run-dir>\report.html`: one self-contained file, no web font, no CDN, no
+network request. It invents nothing and computes nothing; with `--compare-siblings`
+it puts the figures of every earlier run in the same `runs\` folder beside this one.
+
+```powershell
+python scripts\build_run_report.py <run-dir> --compare-siblings
+```
+
+Gate — exit 0 and `report.html` written. The script fails hard and writes nothing
+(an existing `report.html` stays as it was) when the run directory or
+`summary.json` is missing, `summary.json` is not valid JSON or lacks a required
+key, or a comparison file cannot be read; the message names the key. Open the
+file and read it next to `README.md`. `python -m pytest tests\test_build_run_report.py -q`
+also fails when a committed `report.html` is not what the script generates from
+its `summary.json`.
+
+## Step 6 — Archive the inputs and the evidence
+
+Why: the build can only be reproduced or audited if the exact files it read
+still exist, and the next build deletes `data\raw` (step 0). Copy `data\raw`,
+`data\schemas` and the run directory (with its `report.html`) to
+`<archive-root>\standards\<YYYYMMDD>\` (the run's date, one folder per build,
+never overwritten), with a manifest of SHA-256 hashes, and verify the copy
+file by file. `<archive-root>` is a parameter: any folder outside the repository
+on storage you keep. The manifest is also the "listing of every `data/raw` file
+(path, size, mtime, sha256)" that `BuildMetadata` snapshots such as
+`download:<file date>` rely on.
+
+```powershell
+$archiveRoot = '<archive-root>'
+$day  = '<YYYYMMDD>'                                   # the run's date
+$run  = '<run-dir>'
+$dest = Join-Path $archiveRoot "standards\$day"
+$src  = [ordered]@{ raw = 'data\raw'; schemas = 'data\schemas'; run = $run }
+
+if (Test-Path $dest) { throw "$dest exists: an archive is never overwritten" }
+$src.Values | ForEach-Object { if (-not (Test-Path $_)) { throw "missing source: $_" } }
+New-Item -ItemType Directory $dest | Out-Null
+```
+
+Manifest of the sources (SHA-256, size, UTC modification time; paths relative to
+`$dest`, forward slashes):
+
+```powershell
+$rows = foreach ($key in $src.Keys) {
+  $base = (Resolve-Path $src[$key]).Path
+  Get-ChildItem $base -Recurse -File | ForEach-Object {
+    [pscustomobject]@{
+      sha256       = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash
+      size         = $_.Length
+      lastWriteUtc = $_.LastWriteTimeUtc.ToString('o')
+      path         = "$key/" + $_.FullName.Substring($base.Length + 1).Replace('\', '/')
+    }
+  }
+}
+$rows | Export-Csv -LiteralPath "$dest\manifest.csv" -NoTypeInformation -Encoding utf8
+"{0} files in the manifest" -f @($rows).Count
+```
+
+Copy (robocopy keeps file times; exit codes 0 to 7 are success):
+
+```powershell
+foreach ($key in $src.Keys) {
+  robocopy $src[$key] (Join-Path $dest $key) /E /COPY:DAT /DCOPY:DAT /R:1 /W:1 /NFL /NDL /NJH /NJS | Out-Null
+  if ($LASTEXITCODE -ge 8) { throw "robocopy failed for $($src[$key]): exit code $LASTEXITCODE" }
+}
+```
+
+Verify the copy against the manifest (hash and modification time of every
+listed file, and no file in the copy that is not listed):
+
+```powershell
+$listed = Import-Csv -LiteralPath "$dest\manifest.csv"
+$bad = foreach ($r in $listed) {
+  $f = Join-Path $dest ($r.path -replace '/', '\')
+  if (-not (Test-Path -LiteralPath $f)) { "MISSING  $($r.path)"; continue }
+  $item = Get-Item -LiteralPath $f
+  if ((Get-FileHash -LiteralPath $f -Algorithm SHA256).Hash -ne $r.sha256) { "DIFFERS  $($r.path)" }
+  elseif ($item.LastWriteTimeUtc.ToString('o') -ne $r.lastWriteUtc) { "MTIME    $($r.path)" }
+}
+$top = (Resolve-Path $dest).Path
+$copied = @(Get-ChildItem $dest -Recurse -File | Where-Object { $_.Name -ne 'manifest.csv' -or $_.DirectoryName -ne $top }).Count
+if ($bad -or $copied -ne @($listed).Count) { $bad; throw "archive verification failed: $copied files copied, $(@($listed).Count) in the manifest" }
+"archive verified: {0} files, {1}" -f $copied, "$dest\manifest.csv"
+```
+
+Gate — the last line reads `archive verified`, with the same file count as the
+manifest. Only then is the next build allowed to empty `data\raw` (its step 0).
+The archive holds the raw data and is not committed; what is committed is the
+run directory (`gitleaks detect --source docs\fresh-load`, then commit it), and
+no archive path is written into the repository.
