@@ -73,10 +73,16 @@ interactive use (files 1 to 53 of 76) and at 0.42 once it was left alone
 observation; the mechanism was not measured. The load is bounded by a single
 server thread, so it is sensitive to anything that slows that one core.
 
-**F6 — `BuildMetadata` warns about uncommitted changes that are this run's own
-evidence.** The tree was verified clean before the load; the log files written
-under `docs/fresh-load/runs/` during it are what `git status` sees. Same
-warning as on 2026-11-01. The loader code is the one of `683f42b`.
+**F6 — `BuildMetadata` warns about uncommitted changes: a schema-mirror file,
+not loader code.** The tree was verified clean before the run. Step 0 then ran
+`download_schemas.py`, which refreshed `data/schemas/CWE/cwe_schema_latest.xsd`
+from the CWE 7.3 schema to 8.0. `data/schemas/` is ignored, but five files of
+that mirror were still tracked, so the refresh showed up as a tracked change
+(the check ignores untracked files, so the run's own logs are not the cause).
+Nothing reads the mirror; the loader code is the one of `683f42b`. The five
+files were untracked right after this run. The schemas archived with the
+2026-11-01 build still carry the 7.3 schema: the mirror was not refreshed for
+that build.
 
 **F7 — `compare-v12` covers 8 of the 14 expected items.** The procedure runs it
 with `--skip-cve`, which leaves out the KEV, EPSS and SSVC totals. The full
