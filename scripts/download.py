@@ -97,10 +97,14 @@ def download_all_standards(output_dir: str, config: dict) -> dict:
             retries=config.get('retries', 5)
         )
 
-        # Download all standards
-        if not downloader.download():
-            logger.warning("Some standards failed to download")
-            result['details']['download_error'] = "One or more standards could not be downloaded"
+        # Download all standards; every source is attempted, none stops the rest
+        sources = downloader.download_sources()
+        result['sources'] = {n: {'ok': ok, 'reason': why} for n, (ok, why) in sources.items()}
+        failed = [n for n, (ok, _) in sources.items() if not ok]
+        result['failed_sources'] = failed
+        if failed:
+            logger.warning(f"{len(failed)} standard(s) failed to download: {', '.join(failed)}")
+            result['details']['download_error'] = f"Failed sources: {', '.join(failed)}"
         else:
             logger.info("All standards downloaded successfully")
 
@@ -113,13 +117,22 @@ def download_all_standards(output_dir: str, config: dict) -> dict:
         else:
             logger.info("Skipping validation")
 
-        result['success'] = True
+        result['success'] = not failed
 
     except Exception as e:
         result['details']['error'] = str(e)
         logger.error(f"Download error: {e}")
 
     return result
+
+
+def print_source_summary(result: dict) -> None:
+    """One line per source (OK / FAILED and why), then the failed list."""
+    for name, info in result.get('sources', {}).items():
+        print(f"{name:<10} {'OK' if info['ok'] else 'FAILED':<7} {info['reason']}")
+    failed = result.get('failed_sources', [])
+    if failed:
+        print(f"FAILED sources ({len(failed)}): {', '.join(failed)}")
 
 
 def generate_report(result: dict, output_file: str = None) -> str:
@@ -267,6 +280,8 @@ Examples:
 
     # Download all standards using UniversalDownloader
     result = download_all_standards(output_dir, config)
+
+    print_source_summary(result)
 
     # Generate report
     if args.output_report:

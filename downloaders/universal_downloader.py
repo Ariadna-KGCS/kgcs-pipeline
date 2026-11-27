@@ -17,6 +17,14 @@ from .base import AbstractDownloader
 from .validators import validate_json_file, validate_xml_file
 from utils.http_client import HTTPClient
 
+# Output sub-directory of each source under output_dir (see download()).
+SOURCE_DIRS = {
+    'cve': 'CVE', 'cwe': 'CWE', 'cpe': 'CPE', 'cpematch': 'CPE-MATCH',
+    'capec': 'CAPEC', 'attck': 'ATTCK-STIX', 'car': 'car', 'engage': 'ENGAGE',
+    'd3fend': 'D3FEND', 'shield': 'SHIELD',
+    'kev': 'KEV', 'epss': 'EPSS', 'atlas': 'ATLAS',
+}
+
 
 class UniversalDownloader(AbstractDownloader):
     """Universal downloader supporting all 10 cybersecurity standards."""
@@ -43,30 +51,54 @@ class UniversalDownloader(AbstractDownloader):
         self.http_client = HTTPClient(timeout, retries)
         self.manifest = {}
 
-    def download(self) -> bool:
-        """Download all supported standards."""
-        results = {
-            'cve': self._download_cve(),
-            'cwe': self._download_cwe(),
-            'cpe': self._download_cpe(),
-            'cpematch': self._download_cpematch(),
-            'capec': self._download_capec(),
-            'attck': self._download_attck(),
-            'car': self._download_car(),
-            'engage': self._download_engage(),
-            'd3fend': self._download_d3fend(),
-            'shield': self._download_shield(),
+    def download_sources(self) -> Dict[str, Tuple[bool, str]]:
+        """Attempt every source; return {source: (ok, reason)}.
+
+        A source fails when it raises, returns False, or leaves no non-empty
+        file under its output directory. One failure never stops the others.
+        """
+        attempts = {
+            'cve': self._download_cve,
+            'cwe': self._download_cwe,
+            'cpe': self._download_cpe,
+            'cpematch': self._download_cpematch,
+            'capec': self._download_capec,
+            'attck': self._download_attck,
+            'car': self._download_car,
+            'engage': self._download_engage,
+            'd3fend': self._download_d3fend,
+            'shield': self._download_shield,
             # spec 1.2: decision extension (ADR-0003) and ATLAS (ADR-0004)
-            'kev': self._download_new('kev'),
-            'epss': self._download_new('epss'),
-            'atlas': self._download_new('atlas'),
+            'kev': lambda: self._download_new('kev'),
+            'epss': lambda: self._download_new('epss'),
+            'atlas': lambda: self._download_new('atlas'),
         }
 
-        successful = sum(1 for v in results.values() if v)
-        total = len(results)
+        results = {}
+        for name, attempt in attempts.items():
+            try:
+                ok = attempt()
+            except Exception as e:
+                results[name] = (False, f"raised {type(e).__name__}: {e}")
+                continue
+            if not ok:
+                results[name] = (False, "downloader reported failure")
+                continue
+            files = [p for p in (self.output_dir / SOURCE_DIRS[name]).rglob('*') if p.is_file()]
+            if not files:
+                results[name] = (False, "no file written")
+            elif not any(p.stat().st_size > 0 for p in files):
+                results[name] = (False, "only empty files written")
+            else:
+                results[name] = (True, f"{len(files)} file(s)")
 
-        self.log_success(f"Downloaded {successful}/{total} standards")
-        return successful >= 7  # Success if at least 7 standards downloaded
+        failed = [n for n, (ok, _) in results.items() if not ok]
+        self.log_success(f"Downloaded {len(results) - len(failed)}/{len(results)} standards")
+        return results
+
+    def download(self) -> bool:
+        """Download all supported standards; True only if every one succeeded."""
+        return all(ok for ok, _ in self.download_sources().values())
 
     # ==================== CVE ====================
     def _download_cve(self) -> bool:
