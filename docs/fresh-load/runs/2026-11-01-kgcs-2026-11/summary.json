@@ -189,7 +189,7 @@
     "shacl_export_v12": "CONFORMS, 1 known warning (AML.T0073 ADAPTED_FROM remapped T1656→T1684.001)",
     "compare_v12": "EQUAL 8/8",
     "graph_quality": "PASS 6/6 against expected-graph.json from today's raw (first pass against the 2026-09 file: PART_OF 441 vs 436 = +5 techniques of the October ATT&CK release)",
-    "minimums": "PASS 12/12",
+    "minimums": "PASS 14/14",
     "sample": "5/5 (see README)",
     "expected_offline": "step 1 full scan (stdout, 19:08): KEV 1765 · EPSS 398784 · SSVC 210258 · ATLAS 264/718; saved expected-v12.json is the --skip-cve re-run (ATLAS only)"
   },

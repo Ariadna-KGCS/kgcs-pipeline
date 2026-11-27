@@ -27,7 +27,7 @@ builds: [`2026-09-28-kgcs-v12`](../2026-09-28-kgcs-v12/summary.json) (spec
 | 0 Preflight + raw | 13/13 standards dated today; 1 CWE, 1 CAPEC; feed versions diffed vs 2026-09-06 snapshot | PASS — CWE 4.20→**5.0** (xmlns `cwe-7`→`cwe-8`) caught *before* loading |
 | 1 Expected offline | KEV/EPSS/SSVC/ATLAS counts from raw | PASS — KEV 1,765 · EPSS 398,784 · SSVC 210,258 · ATLAS 264/718 (full scan to stdout; the saved `expected-v12.*` is the `--skip-cve` re-run) |
 | 2 ETL | 16/16, 0 deadlocks, 0 errors | PASS — `etl.log` (19:47 → 21:36) |
-| 3 Post-load | postload, shacl-v12, compare-v12, graph-quality, stats | 34/35 (F3) · CONFORMS, 1 known warning (F4) · EQUAL 8/8 · 6/6 after F2 · minimums 12/12 |
+| 3 Post-load | postload, shacl-v12, compare-v12, graph-quality, stats | 34/35 (F3) · CONFORMS, 1 known warning (F4) · EQUAL 8/8 · 6/6 after F2 · minimums 14/14 |
 | 4 Sample | 5 records read against their evidence | 5/5 (below) |
 
 ## Findings
