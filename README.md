@@ -85,4 +85,4 @@ Release **v1.2.1** builds against `kgcs-spec` **1.2.1** (`sync_spec.py --check` 
 
 ## License
 
-[Apache 2.0](LICENSE). The downloaded datasets remain subject to their owners' own terms of use: NIST (NVD: CVE, CVSS, CPE, CPE-MATCH, SSVC data), MITRE (CWE, CAPEC, ATT&CK, D3FEND, CAR, ENGAGE, SHIELD, ATLAS), CISA (KEV) and FIRST (EPSS).
+[Apache 2.0](LICENSE) for the code. The data is not ours: the downloaded datasets, and any graph or dump built from them, remain subject to their owners' own terms of use: NIST (NVD: CVE, CVSS, CPE, CPE-MATCH), MITRE (CWE, CAPEC, ATT&CK, D3FEND, CAR, ENGAGE, SHIELD, ATLAS), CISA (KEV, SSVC decisions) and FIRST (EPSS). Sources, terms and the notices they ask for are in [`DATASET-NOTICE.md`](DATASET-NOTICE.md).
