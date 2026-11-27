@@ -1,0 +1,4 @@
+INFO     etl.neo4j_writer: Neo4jWriter connected to bolt://localhost:7687 (database=kgcs-2026-11-27)
+INFO     shacl_export_v12: export: 500 KevEntry, 500 EpssScore, 500 SsvcDecision; 16 AtlasTactic, 120 AtlasTechnique, 88 AtlasSubTechnique, 40 AtlasMitigation; 674 ATLAS-internal edges, 44 ADAPTED_FROM; 24707 triples
+INFO     shacl_export_v12: CONFORMS against decision.shacl.ttl, atlas.shacl.ttl (pinned spec/shapes); 1 warnings
+INFO     shacl_export_v12:   Warning N5f729b41012e4c919304127c8a10576d: ADAPTED_FROM target attackId differs from the cited attack-reference.id (legitimate only after a revoked-by remap; the loader must report it).

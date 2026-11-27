@@ -116,7 +116,10 @@ SHOW SETTINGS YIELD name, value WHERE name STARTS WITH 'server.memory' RETURN na
 The load is serial: during the relationship phases one server thread does most
 of the work (about 0.8 core for the server and 0.3 for the Python client,
 2026-11-27), so more cores, a higher process priority or closing other programs
-do not shorten it.
+do not shorten it. It is sensitive to that one core being disturbed, though: in
+the 2026-11-27 build the relationship rate was 0.69 min per file while the
+workstation was in interactive use and 0.42 once it was left alone (one
+observation, mechanism not measured). Leave the machine alone during the load.
 
 Before launching, make sure **no other loader is alive**: a PowerShell pipeline
 whose `Tee-Object`/`Out-File` fails still starts `python.exe`, and Ctrl+C on a

@@ -1,0 +1,238 @@
+| Edge type | kgcs-demo 2026-09-26 | v1.0 offline | v1.0 = kgcs-demo | v1.1 offline | Delta |
+| --- | ---: | ---: | :---: | ---: | ---: |
+| `PART_OF` | 1,054 | 1,065 | **NO** | 441 | -624 |
+| `SUBTECHNIQUE_OF` | 540 | 552 | **NO** | 552 | +0 |
+| `IMPLEMENTS` | 235 | 235 | yes | 244 | +9 |
+| `MITIGATED_BY` | 3,010 | 3,010 | yes | 3,087 | +77 |
+| `DEMONSTRATED_BY` | 1,212 | 1,212 | yes | 1,212 | +0 |
+| `CHILD_OF` | 519 | 519 | yes | 533 | +14 |
+
+```json
+{
+  "nodes": {
+    "Tactic": 39,
+    "Technique": 383,
+    "SubTechnique": 552,
+    "AttackPattern": 615,
+    "Weakness": 984,
+    "DefensiveTechnique": 145
+  },
+  "remap_table": {
+    "revoked_with_successor": 196,
+    "deprecated": 26,
+    "revoked_without_successor": 1
+  },
+  "details": {
+    "CHILD_OF": {
+      "v1.0_lost_to_flush_order": [
+        [
+          "CAPEC-13",
+          "CAPEC-77"
+        ],
+        [
+          "CAPEC-140",
+          "CAPEC-74"
+        ],
+        [
+          "CAPEC-162",
+          "CAPEC-77"
+        ],
+        [
+          "CAPEC-163",
+          "CAPEC-98"
+        ],
+        [
+          "CAPEC-164",
+          "CAPEC-98"
+        ],
+        [
+          "CAPEC-219",
+          "CAPEC-94"
+        ],
+        [
+          "CAPEC-384",
+          "CAPEC-94"
+        ],
+        [
+          "CAPEC-386",
+          "CAPEC-94"
+        ],
+        [
+          "CAPEC-463",
+          "CAPEC-97"
+        ],
+        [
+          "CAPEC-466",
+          "CAPEC-94"
+        ],
+        [
+          "CAPEC-608",
+          "CAPEC-97"
+        ],
+        [
+          "CAPEC-656",
+          "CAPEC-98"
+        ],
+        [
+          "CAPEC-662",
+          "CAPEC-94"
+        ],
+        [
+          "CAPEC-663",
+          "CAPEC-74"
+        ]
+      ],
+      "v1.1_minus_v1.0": 14,
+      "v1.0_minus_v1.1": 0
+    },
+    "PART_OF": {
+      "v1.0_cross_domain": 624,
+      "v1.0_cross_domain_by_pair": {
+        "enterprise->ics": 161,
+        "enterprise->mobile": 189,
+        "ics->enterprise": 65,
+        "ics->mobile": 65,
+        "mobile->enterprise": 76,
+        "mobile->ics": 68
+      },
+      "v1.1_cross_domain": 0,
+      "v1.1_unresolved_kill_chain_phases": 0,
+      "kill_chain_phase_entries": 441,
+      "v1.1_techniques_without_part_of": [],
+      "v1.1_minus_v1.0": 0
+    },
+    "IMPLEMENTS": {
+      "refs": {
+        "rows": 307,
+        "remapped": 47,
+        "dropped_deprecated": 3,
+        "unresolved": 0
+      },
+      "taxonomy_rows": 271,
+      "stix_refs_on_live_techniques": 0,
+      "stix_refs_on_revoked_or_deprecated": 36,
+      "added": [
+        [
+          "CAPEC-13",
+          "T1690"
+        ],
+        [
+          "CAPEC-268",
+          "T1685"
+        ],
+        [
+          "CAPEC-268",
+          "T1690"
+        ],
+        [
+          "CAPEC-564",
+          "T1647"
+        ],
+        [
+          "CAPEC-570",
+          "T1027"
+        ],
+        [
+          "CAPEC-571",
+          "T1685"
+        ],
+        [
+          "CAPEC-578",
+          "T1685"
+        ],
+        [
+          "CAPEC-578",
+          "T1686"
+        ],
+        [
+          "CAPEC-578",
+          "T1688"
+        ]
+      ],
+      "removed": [],
+      "remap_detail": {
+        "remapped": {
+          "T1004": "T1547.004",
+          "T1009": "T1027.001",
+          "T1015": "T1546.008",
+          "T1017": "T1072",
+          "T1019": "T1542.001",
+          "T1023": "T1547.009",
+          "T1028": "T1021.006",
+          "T1031": "T1543.003",
+          "T1038": "T1574.001",
+          "T1042": "T1546.001",
+          "T1044": "T1574.010",
+          "T1045": "T1027.002",
+          "T1050": "T1543.003",
+          "T1054": "T1685",
+          "T1058": "T1574.011",
+          "T1060": "T1547.001",
+          "T1073": "T1574.001",
+          "T1075": "T1550.002",
+          "T1076": "T1021.001",
+          "T1077": "T1021.002",
+          "T1081": "T1552.001",
+          "T1089": "T1685",
+          "T1097": "T1550.003",
+          "T1100": "T1505.003",
+          "T1130": "T1553.004",
+          "T1141": "T1056.002",
+          "T1148": "T1690",
+          "T1151": "T1036.006",
+          "T1157": "T1574.004",
+          "T1162": "T1647",
+          "T1192": "T1566.002",
+          "T1193": "T1566.001",
+          "T1194": "T1566.003",
+          "T1562.001": "T1685",
+          "T1562.002": "T1685.001",
+          "T1562.003": "T1690",
+          "T1562.004": "T1686",
+          "T1562.006": "T1685",
+          "T1562.007": "T1686.001",
+          "T1562.008": "T1685.002",
+          "T1562.009": "T1688",
+          "T1574.002": "T1574.001"
+        },
+        "deprecated": [
+          "T1034",
+          "T1051",
+          "T1062"
+        ],
+        "unresolved": []
+      }
+    },
+    "MITIGATED_BY": {
+      "refs": {
+        "rows": 3109,
+        "remapped": 88,
+        "dropped_deprecated": 11,
+        "unresolved": 0
+      },
+      "v1.0_pairs_dropped_by_match": 99,
+      "added": 77,
+      "removed": 0,
+      "remap_detail": {
+        "remapped": {
+          "T1070.001": "T1685.005",
+          "T1070.002": "T1685.006",
+          "T1142": "T1555.001",
+          "T1547.011": "T1647",
+          "T1562.001": "T1685",
+          "T1562.002": "T1685.001",
+          "T1562.003": "T1690",
+          "T1562.004": "T1686",
+          "T1562.009": "T1688",
+          "T1562.010": "T1689",
+          "T1574.002": "T1574.001"
+        },
+        "deprecated": [
+          "T1053.004"
+        ],
+        "unresolved": []
+      }
+    }
+  }
+}
+```

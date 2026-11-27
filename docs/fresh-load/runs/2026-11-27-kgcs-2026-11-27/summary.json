@@ -1,0 +1,213 @@
+{
+  "run": {
+    "date": "2026-11-27",
+    "database": "kgcs-2026-11-27",
+    "neo4j": "2026.09.0 enterprise (read from the server); heap max 8.00GiB, page cache 12.00GiB; other databases online: none",
+    "pipeline_commit": "683f42b029d6ec3298ca925da06fc8125781454f",
+    "pipeline_branch": "devel",
+    "spec_version": "1.2.1",
+    "python": "3.14.6",
+    "neo4j_driver": "6.2.0",
+    "note": "full build from a fresh download, run unattended (steps 0 to 5); summary generated from the logs and the graph, then completed by hand with the sample"
+  },
+  "sources": {
+    "cpe": "2026-11-25T23:50:01Z..2026-11-26T23:49:15Z",
+    "cve": "2026-10-21T03:05:10Z..2026-11-27T01:00:06Z",
+    "cvss": "2026-10-21T03:05:10Z..2026-11-27T01:00:06Z",
+    "cwe": "5.0",
+    "capec": "3.9",
+    "attck": "download:2026-11-27;modified-max:2026-11-04",
+    "d3fend": "1.3.0",
+    "car": "download:2026-11-27",
+    "shield": "download:2026-11-27",
+    "engage": "download:2026-11-27",
+    "kev": "2026.11.25",
+    "epss": "2026-11-26;model:v2026.06.15",
+    "atlas": "2026.09",
+    "raw_files": 275,
+    "raw_bytes": 8063355141
+  },
+  "etl": {
+    "steps": 16,
+    "started": "2026-11-27T08:38:00",
+    "finished": "2026-11-27T09:50:27",
+    "duration_min": 72.5,
+    "deadlocks": 0,
+    "errors": 0,
+    "per_step": {
+      "constraints": {
+        "min": 0.1
+      },
+      "cpe": {
+        "nodes": 2564891,
+        "rels": 32391556,
+        "min": 53.9
+      },
+      "cve": {
+        "nodes": 3404236,
+        "rels": 9390317,
+        "min": 13.7
+      },
+      "cvss": {
+        "nodes": 586548,
+        "rels": 586548,
+        "min": 1.5
+      },
+      "kev": {
+        "nodes": 1805,
+        "rels": 1805,
+        "dropped_no_vulnerability": 0
+      },
+      "epss": {
+        "nodes": 413377,
+        "rels": 413377,
+        "dropped_no_vulnerability": 0,
+        "min": 0.8
+      },
+      "ssvc": {
+        "nodes": 227528,
+        "rels": 227528,
+        "adp_entries": 234064,
+        "duplicates_collapsed": 6536,
+        "min": 1.1
+      },
+      "cwe": {
+        "nodes": 984,
+        "rels": 379138,
+        "consequences": 1278,
+        "skipped_nvd_ids": 66528,
+        "skipped_unmapped_cwe": 14469,
+        "min": 1.1
+      },
+      "capec": {
+        "nodes": 615,
+        "rels": 2559
+      },
+      "attck": {
+        "nodes": 974,
+        "rels": 1237,
+        "tactics": 39,
+        "techniques": 383,
+        "subtechniques": 552,
+        "skipped_revoked": 579
+      },
+      "atlas": {
+        "nodes": 264,
+        "rels": 718,
+        "min": 0.1
+      },
+      "d3fend": {
+        "nodes": 145,
+        "rels": 3087
+      },
+      "car": {
+        "nodes": 102,
+        "rels": 278,
+        "min": 0.2
+      },
+      "shield": {
+        "nodes": 33,
+        "rels": 255
+      },
+      "engage": {
+        "nodes": 45,
+        "rels": 593
+      },
+      "build_metadata": {
+        "nodes": 1,
+        "snapshots": 13
+      }
+    }
+  },
+  "graph": {
+    "total_nodes": 7203640,
+    "reconciled_with_etl": true,
+    "labels": {
+      "Platform": 1884010,
+      "VulnerabilityConfigurationNode": 1239007,
+      "Reference": 946916,
+      "VulnerabilityConfiguration": 785243,
+      "PlatformConfiguration": 680881,
+      "Score": 586548,
+      "Vulnerability": 433070,
+      "EpssScore": 413377,
+      "SsvcDecision": 227528,
+      "Consequence": 2092,
+      "KevEntry": 1805,
+      "Weakness": 984,
+      "AttackPattern": 615,
+      "SubTechnique": 552,
+      "Technique": 383,
+      "DefensiveTechnique": 145,
+      "AtlasTechnique": 120,
+      "DetectionAnalytic": 102,
+      "AtlasSubTechnique": 88,
+      "EngagementConcept": 45,
+      "AtlasMitigation": 40,
+      "Tactic": 39,
+      "DeceptionTechnique": 33,
+      "AtlasTactic": 16,
+      "BuildMetadata": 1
+    },
+    "rel_types": {
+      "MATCHES_PLATFORM": 32391556,
+      "MATCHES_CRITERIA": 3302364,
+      "AFFECTS": 2666024,
+      "REFERENCES": 1397679,
+      "HAS_NODE": 1239007,
+      "HAS_CONFIGURATION": 785243,
+      "HAS_SCORE": 586548,
+      "HAS_EPSS": 413377,
+      "CAUSED_BY": 379138,
+      "HAS_SSVC": 227528,
+      "MITIGATED_BY": 3087,
+      "HAS_CONSEQUENCE": 2092,
+      "HAS_KEV_ENTRY": 1805,
+      "DEMONSTRATED_BY": 1212,
+      "DISRUPTS": 593,
+      "SUBTECHNIQUE_OF": 552,
+      "CHILD_OF": 533,
+      "PART_OF": 441,
+      "MITIGATES": 361,
+      "DETECTED_BY": 278,
+      "COUNTERED_BY": 255,
+      "IMPLEMENTS": 244,
+      "ACHIEVES": 225,
+      "SPECIALIZES": 88,
+      "ADAPTED_FROM": 44
+    }
+  },
+  "chain": {
+    "cves": 433070,
+    "cve_with_cwe": 339011,
+    "cve_to_cwe_pct": 78.28,
+    "cve_without_cvss": 23649,
+    "cve_without_cvss_pct": 5.46,
+    "cvss_scores_by_version": {
+      "2.0": 197620,
+      "3.0": 55001,
+      "3.1": 284067,
+      "4.0": 49860
+    }
+  },
+  "validation": {
+    "shacl_tbox": "PASS 10/10 + core invariants",
+    "postload_cypher": "FAIL 1 of 35 checks: cwe_consequence_vocabulary (known before this run)",
+    "shacl_export_v12": "CONFORMS against decision.shacl.ttl, atlas.shacl.ttl (pinned spec/shapes); 1 warnings",
+    "compare_v12": "EQUAL 8/8",
+    "graph_quality": "PASS 6/6",
+    "minimums": "PASS 14/14",
+    "expected_offline": "EQUAL step 1 full scan against the graph: KevEntry 1,805, EpssScore 413,377, SsvcDecision 227,528 (read by hand; compare-v12 ran with --skip-cve and covers the 8 ATLAS items)",
+    "sample": "PASS 6/6 records read against their evidence (README)",
+    "download": "PASS 13/13 sources dated 2026-11-27, exit code 0; one CWE and one CAPEC catalog"
+  },
+  "verdict": "GREEN — 16/16 ETL steps, 7,203,640 nodes equal to the sum of the step counters, 34/35 post-load checks; the one red is the known CWE 5.0 vocabulary gap",
+  "not_verified": [
+    "which ATT&CK objects the November edits touched (modified-max 2026-11-04): the technique, sub-technique and tactic counts are unchanged",
+    "node-by-node content: the gates compare counts, shapes and expected totals; six records were read",
+    "the schemas written by download_schemas.py (exit code 0, files not inspected)",
+    "why the relationship rate dropped while the workstation was in interactive use: one observation, mechanism not measured",
+    "CAUSED_BY provenance alignment beyond the sampled CVEs (the Cypher check covers all)",
+    "nothing about kgcs-server against this database: its spec pin is still 1.0.0"
+  ]
+}

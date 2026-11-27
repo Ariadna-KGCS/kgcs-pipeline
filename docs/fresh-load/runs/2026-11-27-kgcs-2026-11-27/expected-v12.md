@@ -1,0 +1,16 @@
+| Item | Expected |
+| --- | --- |
+| AtlasTactic | 16 |
+| AtlasTechnique | 120 |
+| AtlasSubTechnique | 88 |
+| AtlasMitigation | 40 |
+| ACHIEVES | 225 |
+| SPECIALIZES | 88 |
+| MITIGATES | 361 |
+| ADAPTED_FROM | 44 |
+| KevEntry | 1,805 |
+| HAS_KEV_ENTRY | 1,805 |
+| EpssScore | 413,377 |
+| HAS_EPSS | 413,377 |
+| SsvcDecision | 227,528 |
+| HAS_SSVC | 227,528 |
