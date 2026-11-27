@@ -38,11 +38,13 @@ Test-Path "$previous\manifest.csv"       # must print True; if False, do step 6 
 Remove-Item data\raw -Recurse -Force
 New-Item -ItemType Directory data\raw | Out-Null
 python scripts/download.py --standard all 2>&1 | Out-File -Encoding utf8 <run-dir>\download.log
+if ($LASTEXITCODE -ne 0) { throw "download.py failed (exit $LASTEXITCODE): failed sources are named in download.log" }
 python scripts/download_schemas.py       # so the schemas archived in step 6 are this build's own
 ```
 
-Gate — every standard has files dated today, and exactly one CWE and one
-CAPEC catalog:
+Gate — `download.py` must have exited 0 (the `throw` above stops the run otherwise).
+The exit code does not detect stale files, so also check that every standard has files dated today, and
+exactly one CWE and one CAPEC catalog:
 
 ```powershell
 Get-ChildItem data\raw -Directory | ForEach-Object {

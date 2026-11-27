@@ -180,11 +180,14 @@ What the code does, as measured (not what the flags suggest):
 - **Directories written:** `CVE/`, `CWE/`, `CPE/` (+ `nvdcpe-2.0-chunks/`),
   `CPE-MATCH/` (+ `nvdcpematch-2.0-chunks/`), `CAPEC/`, `ATTCK-STIX/`, `car/`,
   `ENGAGE/`, `SHIELD/`, `D3FEND/`, `KEV/`, `EPSS/`, `ATLAS/`.
-- **Soft success.** The downloader reports success when at least 7 of the 13 sources
-  download, and `validate()` only checks that a source's directory has files
-  (also with a threshold of 7); `download.py` exits 0 unless an exception escapes.
-  A partial or stale `data/raw` therefore passes: the gate is the per-source date
-  check in `fresh-load.md`, step 0.
+- **Exit code.** `download.py` attempts all 13 sources, prints one line per source
+  (`OK` / `FAILED` and why) and the list of failed ones, and exits 0 only if every
+  source succeeded, 1 otherwise. A source fails if it raises, reports failure, or
+  leaves no non-empty file in its directory; the files of the sources that did
+  succeed stay in place. `validate()` is informational (it only checks that a
+  source's directory has files, with a threshold of 7) and does not change the exit
+  code. A stale `data/raw` still passes, since nothing checks file dates: the gate
+  for that is the per-source date check in `fresh-load.md`, step 0.
 - It overwrites but never cleans, so start from an empty `data/raw`.
 - **ATLAS** is the pinned release `APIEndpoints.atlas_release` (`ATLAS-<release>.yaml`,
   not `ATLAS-latest.yaml`); **EPSS** is saved as `epss_scores-<score date>.csv.gz`.
