@@ -86,6 +86,38 @@ clean delta. The previous database stays as the reference it already is.
 
 In Neo4j (database `system`): ``CREATE DATABASE `<database>` IF NOT EXISTS;``
 
+Size the server's memory before loading. With the stock configuration of a
+desktop installation (heap 1 GiB, page cache 512 MiB) the load completes, but
+the relationship phases slow down once the store outgrows the page cache: on
+2026-11-01 the `MATCHES_PLATFORM` rate halved from about file 13 of 74 and
+stayed there. The same inputs and the same loaders took 109 min with
+1 GiB / 512 MiB and five other databases online (2026-11-01), and 70 min with
+8 GiB / 12 GiB and those databases stopped (2026-11-27, run
+`2026-11-27-kgcs-2026-11-rc`, a workstation with 64 GB of RAM). The two changes
+were made together; which one matters is not separated. In `neo4j.conf`, replace
+the existing lines (do not add duplicates) and restart the server:
+
+```
+server.memory.heap.initial_size=8g
+server.memory.heap.max_size=8g
+server.memory.pagecache.size=12g
+```
+
+The page cache should hold at least the store being loaded (4.5 GB on disk for
+this graph). Stop the databases the load does not need (`STOP DATABASE`;
+`START DATABASE` brings them back), and write down what the server itself
+reports, for the run's `summary.json`:
+
+```cypher
+CALL dbms.components() YIELD name, versions, edition RETURN name, versions, edition;
+SHOW SETTINGS YIELD name, value WHERE name STARTS WITH 'server.memory' RETURN name, value;
+```
+
+The load is serial: during the relationship phases one server thread does most
+of the work (about 0.8 core for the server and 0.3 for the Python client,
+2026-11-27), so more cores, a higher process priority or closing other programs
+do not shorten it.
+
 Before launching, make sure **no other loader is alive**: a PowerShell pipeline
 whose `Tee-Object`/`Out-File` fails still starts `python.exe`, and Ctrl+C on a
 pipeline does not reliably kill it. A survivor keeps writing after
